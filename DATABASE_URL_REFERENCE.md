@@ -1,49 +1,21 @@
 # DATABASE_URL Reference
 
-**IMPORTANT: Keep this file for reference. Do NOT commit passwords to git.**
+**Do not commit real passwords or full connection strings.** Use Vercel env vars and local `.env.local` only (gitignored).
 
-## Current Supabase Connection String Format
-
-```
-postgresql://postgres.qgywoqfpybtbpqrnrlke:[PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres
-```
-
-## Current Password (as of 2025-12-27)
-
-**Password:** `3jFPhH9oVrtYOc2W`
-
-## Complete Connection String
+## Supabase pooler format (example)
 
 ```
-postgresql://postgres.qgywoqfpybtbpqrnrlke:3jFPhH9oVrtYOc2W@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+postgresql://postgres.[PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres
 ```
 
-## Where to Update
+Get the live string from **Supabase → Project Settings → Database → Connection string** (Transaction pooler, URI).
 
-1. **Vercel Environment Variables:**
-   - Go to: https://vercel.com/adams-projects-253473d1/eaa-690-redesign/settings/environment-variables
-   - Find `DATABASE_URL`
-   - Click "Edit" or the menu (three dots)
-   - Update the value with the complete connection string above
-   - Save and redeploy
+## Where to set the value
 
-2. **Local Development (.env.local):**
-   - Create/update `.env.local` in the project root
-   - Add: `DATABASE_URL=postgresql://postgres.qgywoqfpybtbpqrnrlke:3jFPhH9oVrtYOc2W@aws-0-us-east-1.pooler.supabase.com:6543/postgres`
+1. **Vercel:** Project → Settings → Environment Variables → `DATABASE_URL`
+2. **Local:** `.env.local` in the project root (create if needed; never commit)
 
-## Connection String Components
+## If the password changes
 
-- **Host:** `aws-0-us-east-1.pooler.supabase.com`
-- **Port:** `6543` (Connection Pooler)
-- **Database:** `postgres`
-- **User:** `postgres.qgywoqfpybtbpqrnrlke`
-- **Password:** `3jFPhH9oVrtYOc2W` (current as of 2025-12-27)
-
-## If Password Changes Again
-
-1. Reset password in Supabase: https://supabase.com/dashboard/project/qgywoqfpybtbpqrnrlke/database/settings
-2. Update this file with the new password
-3. Update Vercel environment variable
-4. Update local `.env.local` if needed
-5. Redeploy on Vercel
-
+1. Reset in Supabase (Database settings) and update `DATABASE_URL` in Vercel and `.env.local`.
+2. Redeploy Vercel.
