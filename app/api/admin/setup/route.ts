@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ensureBetterAuthSchema } from '@/lib/better-auth'
+import { APIError } from 'better-auth'
+import { getAuth, ensureBetterAuthSchema } from '@/lib/better-auth'
 import { getEffectiveDatabaseUrl, isPostgresUrl } from '@/lib/db-resolver'
 import { runSqliteAdminSetup } from '@/lib/admin-setup-sqlite'
-import { getSiteBaseURL } from '@/lib/site-url'
 import { Pool } from 'pg'
 
 /**
@@ -83,10 +83,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if any admin users exist
-    // First, let's check what tables exist
     try {
-      // BetterAuth might use different table names - let's try to find the user table
       const tableCheck = await pool.query(`
         SELECT table_name 
         FROM information_schema.tables 
@@ -94,194 +91,58 @@ export async function POST(request: NextRequest) {
         AND table_name LIKE '%user%'
       `)
       console.log('Available user tables:', tableCheck.rows)
-      
-      // Try to check admin count (table might be named 'user' or something else)
-      const adminCheck = await pool.query(
-        "SELECT COUNT(*) as count FROM \"user\" WHERE role = 'admin'"
-      )
-      const adminCount = parseInt(adminCheck.rows[0]?.count || '0')
-      console.log('Admin count:', adminCount)
-      
-      // Optional: Uncomment to disable after first admin is created
-      // if (adminCount > 0) {
-      //   return NextResponse.json(
-      //     { error: 'Admin setup is disabled. An admin account already exists.' },
-      //     { status: 403 }
-      //   )
-      // }
     } catch (checkError) {
-      console.error('Error checking admin count:', checkError)
-      // Continue anyway - might be first run or table doesn't exist yet
+      console.warn('admin setup: could not list tables', checkError)
     }
 
-    // Create user using BetterAuth's signUpEmail API
-    // Use direct HTTP request to avoid internal API issues
-    console.log('Creating user account...')
-    const baseURL = getSiteBaseURL()
-    const basePath = "/api/auth"
-    const signUpURL = `${baseURL}${basePath}/sign-up/email`
-    console.log('Sign-up URL:', signUpURL)
-    
-    let result: { token: null | string; user: { id: string } } | undefined
+    /**
+     * In-process sign-up (same as Better Auth tests). Avoids server-side fetch to the
+     * public URL, which fails on Vercel (deployment protection, wrong baseURL, cold starts).
+     */
     let userId: string | null = null
-    
+
     try {
-      // Make direct HTTP request to Better Auth endpoint
-      const response = await fetch(signUpURL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const signUpResult = await getAuth().api.signUpEmail({
+        body: {
           email: email.toLowerCase(),
           password,
           name,
-        }),
+        },
       })
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        const error: any = new Error(errorData.error || `HTTP ${response.status}`)
-        error.statusCode = response.status
-        error.body = errorData
-        
-        // If 403 and user might already exist, check database first
-        if (response.status === 403) {
-          console.log('403 error during sign-up, checking if user already exists...')
-          try {
-            const existingUser = await pool.query(
-              'SELECT id FROM "user" WHERE email = $1',
-              [email.toLowerCase()]
-            )
-            
-            if (existingUser.rows.length > 0) {
-              userId = existingUser.rows[0].id
-              console.log('User already exists with ID:', userId)
-              // Continue to set admin role below
-            } else {
-              // User doesn't exist but got 403 - this is a real error
-              throw error
-            }
-          } catch (checkError) {
-            console.error('Failed to check for existing user:', checkError)
-            throw error
-          }
-        } else {
-          throw error
-        }
-      }
-      
-      result = await response.json() as { token: null | string; user: { id: string } }
-    } catch (apiError: any) {
-      // Check if user already exists
-      if (apiError?.statusCode === 422 && apiError?.body?.code === 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL') {
-        console.log('User already exists, fetching existing user...')
-        // User already exists - fetch them and update their role
-        try {
-          const existingUser = await pool.query(
-            'SELECT id FROM "user" WHERE email = $1',
-            [email.toLowerCase()]
-          )
-          
-          if (existingUser.rows.length > 0) {
-            userId = existingUser.rows[0].id
-            console.log('Found existing user ID:', userId)
-            // We'll update the role below
-          } else {
-            return NextResponse.json(
-              { error: 'User exists but could not be found in database' },
-              { status: 500 }
-            )
-          }
-        } catch (fetchError) {
-          console.error('Failed to fetch existing user:', fetchError)
-          return NextResponse.json(
-            { error: 'User already exists but could not be retrieved', details: fetchError instanceof Error ? fetchError.message : 'Unknown error' },
-            { status: 500 }
-          )
-        }
-      } else {
-        // Some other error occurred - could be 403 Forbidden
-        console.error('BetterAuth API error:', apiError)
-        console.error('Error type:', typeof apiError)
-        console.error('Error status:', (apiError as any)?.statusCode || (apiError as any)?.status)
-        console.error('Error details:', JSON.stringify(apiError, Object.getOwnPropertyNames(apiError)))
-        
-        // Check if it's a 403 error
-        const statusCode = (apiError as any)?.statusCode || (apiError as any)?.status || 500
-        if (statusCode === 403) {
-          return NextResponse.json(
-            { 
-              error: 'Sign-up is forbidden. This might be due to Better Auth configuration or security restrictions.',
-              details: apiError instanceof Error ? apiError.message : '403 Forbidden',
-              suggestion: 'Check Better Auth configuration and ensure sign-up is enabled. You may need to configure the baseURL correctly.',
-            },
-            { status: 403 }
-          )
-        }
-        
-        // Try to get more details from the error
-        const errorDetails = apiError instanceof Error 
-          ? {
-              message: apiError.message,
-              name: apiError.name,
-              stack: apiError.stack,
-              cause: (apiError as any).cause,
-              statusCode: (apiError as any)?.statusCode,
-            }
-          : { raw: apiError }
-        
-        return NextResponse.json(
-          { 
-            error: 'Failed to create account via BetterAuth API', 
-            details: apiError instanceof Error ? apiError.message : 'Unknown API error',
-            statusCode: statusCode,
-            errorDetails: process.env.NODE_ENV === 'development' ? errorDetails : undefined,
-          },
-          { status: statusCode }
+      const u = signUpResult?.user as { id?: string } | undefined
+      if (u?.id) userId = u.id
+    } catch (e: unknown) {
+      const alreadyExists =
+        e instanceof APIError &&
+        e.status === 'UNPROCESSABLE_ENTITY' &&
+        typeof e.message === 'string' &&
+        e.message.toLowerCase().includes('already exists')
+
+      if (alreadyExists) {
+        const existingUser = await pool.query<{ id: string }>(
+          'SELECT id FROM "user" WHERE email = $1',
+          [email.toLowerCase()]
         )
+        userId = existingUser.rows[0]?.id ?? null
       }
-    }
-
-    // If we don't have a userId yet (from existing user), get it from the result
-    if (!userId && result) {
-      // Log the full result to debug the structure
-      console.log('Full BetterAuth result:', JSON.stringify(result, null, 2))
-      console.log('Result keys:', Object.keys(result))
-      
-      // BetterAuth's signUpEmail returns { token, user } directly
-      // The result type is { token: null | string; user: { id: string; ... } }
-      const user = result.user
-      
-      console.log('User object:', user)
-      console.log('User ID:', user?.id)
-
-      // Get the user ID from the created user
-      userId = user?.id
 
       if (!userId) {
-        console.error('Could not find user ID in result:', {
-          hasUser: !!user,
-          resultKeys: Object.keys(result),
-          fullResult: result,
-        })
-        return NextResponse.json(
-          { 
-            error: 'User created but ID not found',
-            debug: process.env.NODE_ENV === 'development' ? {
-              resultStructure: result,
-              user: user,
-              resultKeys: Object.keys(result),
-            } : undefined,
-          },
-          { status: 500 }
-        )
+        if (e instanceof APIError) {
+          return NextResponse.json(
+            {
+              error: e.message || 'Sign-up failed',
+              details: e.status,
+            },
+            { status: e.statusCode ?? 500 }
+          )
+        }
+        throw e
       }
     }
-    
+
     if (!userId) {
       return NextResponse.json(
-        { error: 'Could not determine user ID' },
+        { error: 'Could not create user or find existing account' },
         { status: 500 }
       )
     }
@@ -378,9 +239,9 @@ export async function POST(request: NextRequest) {
       // Continue - user was created, role can be set manually if needed
     }
 
-    // Fetch the final user data
+    // Fetch the final user row (avoid hard-coded columns: role / emailVerified may differ by migration)
     const finalUserResult = await pool.query(
-      'SELECT id, email, name, role, "emailVerified" FROM "user" WHERE id = $1',
+      'SELECT * FROM "user" WHERE id = $1 LIMIT 1',
       [userId]
     )
     const finalUser = finalUserResult.rows[0]

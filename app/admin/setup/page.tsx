@@ -43,7 +43,8 @@ export default function AdminSetupPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Failed to create admin account')
+        const msg = [data.error, data.details].filter(Boolean).join(' — ')
+        setError(msg || 'Failed to create admin account')
       } else {
         setSuccess(data.message || 'Admin account created successfully! You can now log in.')
         // Clear form

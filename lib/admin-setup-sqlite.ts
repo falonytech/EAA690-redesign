@@ -1,7 +1,7 @@
 import Database from "better-sqlite3"
-import { ensureBetterAuthSchema } from "@/lib/better-auth"
+import { APIError } from "better-auth"
+import { getAuth, ensureBetterAuthSchema } from "@/lib/better-auth"
 import { resolveSqliteFilePath } from "@/lib/db-resolver"
-import { getSiteBaseURL } from "@/lib/site-url"
 
 export function openSqliteFromUrl(dbUrl: string): Database.Database {
   return new Database(resolveSqliteFilePath(dbUrl))
@@ -67,43 +67,40 @@ export async function runSqliteAdminSetup(params: {
   const db = openSqliteFromUrl(dbUrl)
 
   try {
-    const baseURL = getSiteBaseURL()
-    const signUpURL = `${baseURL}/api/auth/sign-up/email`
-
-    const response = await fetch(signUpURL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: email.toLowerCase(),
-        password,
-        name,
-      }),
-    })
-
     let userId: string | null = null
 
-    if (!response.ok) {
-      const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
-      const existing = db
-        .prepare(`SELECT id FROM "user" WHERE email = ?`)
-        .get(email.toLowerCase()) as { id: string } | undefined
-
-      if (existing?.id) {
-        userId = existing.id
-      } else {
-        return {
-          error:
-            (typeof errorData.message === "string" && errorData.message) ||
-            `Sign-up failed (${response.status})`,
-          status: response.status >= 400 && response.status < 600 ? response.status : 500,
-          details: JSON.stringify(errorData),
-        }
-      }
-    } else {
-      const result = (await response.json()) as SignUpResult
+    try {
+      const result = (await getAuth().api.signUpEmail({
+        body: {
+          email: email.toLowerCase(),
+          password,
+          name,
+        },
+      })) as SignUpResult
       userId = result.user?.id ?? null
+    } catch (e: unknown) {
+      const alreadyExists =
+        e instanceof APIError &&
+        e.status === "UNPROCESSABLE_ENTITY" &&
+        typeof e.message === "string" &&
+        e.message.toLowerCase().includes("already exists")
+
+      if (alreadyExists) {
+        const existing = db
+          .prepare(`SELECT id FROM "user" WHERE email = ?`)
+          .get(email.toLowerCase()) as { id: string } | undefined
+        userId = existing?.id ?? null
+      }
+
       if (!userId) {
-        return { error: "User created but ID not found in response.", status: 500 }
+        if (e instanceof APIError) {
+          return {
+            error: e.message || "Sign-up failed",
+            status: e.statusCode >= 400 && e.statusCode < 600 ? e.statusCode : 500,
+            details: String(e.status),
+          }
+        }
+        throw e
       }
     }
 

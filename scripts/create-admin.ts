@@ -10,7 +10,7 @@
  * Note: Make sure DATABASE_URL is set in your environment
  */
 
-import { auth } from "../lib/better-auth"
+import { getAuth } from "../lib/better-auth"
 
 async function createAdmin() {
   const args = process.argv.slice(2)
@@ -27,7 +27,7 @@ async function createAdmin() {
     console.log("Creating admin account...")
     
     // Create user with admin role
-    const result = await auth.api.signUpEmail({
+    const result = await getAuth().api.signUpEmail({
       body: {
         email,
         password,

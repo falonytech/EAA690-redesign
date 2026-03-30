@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/better-auth'
 
 /**
  * Debug route to check Better Auth configuration

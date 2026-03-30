@@ -1,9 +1,16 @@
-import { auth, DEV_SECRET_FALLBACK, ensureBetterAuthSchema } from "@/lib/better-auth"
+import { getAuth, DEV_SECRET_FALLBACK, ensureBetterAuthSchema } from "@/lib/better-auth"
 import { getEffectiveDatabaseUrl } from "@/lib/db-resolver"
 import { toNextJsHandler } from "better-auth/next-js"
 import { NextRequest } from "next/server"
 
-const { GET: authGET, POST: authPOST } = toNextJsHandler(auth.handler)
+/** Lazy: bind handler after env (DATABASE_URL, secrets) is available at runtime — not at import time. */
+let _handlers: ReturnType<typeof toNextJsHandler> | null = null
+function getAuthHandlers() {
+  if (!_handlers) {
+    _handlers = toNextJsHandler(getAuth().handler)
+  }
+  return _handlers
+}
 
 // Handle OPTIONS preflight requests for CORS
 export async function OPTIONS(request: NextRequest) {
@@ -133,9 +140,11 @@ async function handleWithError(
 }
 
 export async function GET(request: NextRequest) {
+  const { GET: authGET } = getAuthHandlers()
   return handleWithError(authGET, request)
 }
 
 export async function POST(request: NextRequest) {
+  const { POST: authPOST } = getAuthHandlers()
   return handleWithError(authPOST, request)
 }

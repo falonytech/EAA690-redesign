@@ -9,7 +9,7 @@ import { signIn } from '@/lib/better-auth-client'
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirect = searchParams.get('redirect') || '/members'
+  const redirect = searchParams?.get('redirect') || '/members'
   
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

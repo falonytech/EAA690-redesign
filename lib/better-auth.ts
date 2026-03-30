@@ -1,6 +1,5 @@
 import { betterAuth } from "better-auth"
 import { twoFactor, admin } from "better-auth/plugins"
-import Database from "better-sqlite3"
 import { Pool } from "pg"
 import { getEffectiveDatabaseUrl, isPostgresUrl, resolveSqliteFilePath } from "./db-resolver"
 import { getSiteBaseURL } from "./site-url"
@@ -28,22 +27,12 @@ function getPool(): Pool | null {
       max: 1,
     })
 
-    _pool.query("SELECT NOW()").catch((err) => {
-      console.error("Initial database connection test failed:", {
-        message: err.message,
-        code: (err as { code?: string })?.code,
-        detail: (err as { detail?: string })?.detail,
-      })
-      _pool = null
-    })
-
     _pool.on("error", (err) => {
       console.error("Unexpected database pool error:", {
         message: err.message,
         code: (err as { code?: string })?.code,
         detail: (err as { detail?: string })?.detail,
       })
-      _pool = null
     })
   } catch (error) {
     console.error("Failed to create database pool:", {
@@ -57,16 +46,17 @@ function getPool(): Pool | null {
   return _pool
 }
 
-// Lazy initialization — SQLite (local dev default: ./eaa-auth.db)
-let _sqlite: Database.Database | null = null
+// Lazy SQLite — require() only when needed so Vercel (Postgres-only) never loads the native addon.
+let _sqlite: import("better-sqlite3").Database | null = null
 
-function getSqlite(): Database.Database | null {
+function getSqlite(): import("better-sqlite3").Database | null {
   if (_sqlite) return _sqlite
 
   const url = getEffectiveDatabaseUrl()
   if (!url || isPostgresUrl(url)) return null
 
   try {
+    const Database = require("better-sqlite3") as typeof import("better-sqlite3")
     const filePath = resolveSqliteFilePath(url)
     console.log("Opening SQLite for Better Auth:", { path: filePath })
     _sqlite = new Database(filePath)
@@ -77,7 +67,7 @@ function getSqlite(): Database.Database | null {
   }
 }
 
-function getAuthDatabase(): Pool | Database.Database | undefined {
+function getAuthDatabase(): Pool | import("better-sqlite3").Database | undefined {
   const url = getEffectiveDatabaseUrl()
   if (!url) {
     console.warn(
@@ -120,21 +110,35 @@ function getSecret(): string {
   return DEV_SECRET_FALLBACK
 }
 
-export const auth = betterAuth({
-  database: getAuthDatabase(),
-  baseURL: getSiteBaseURL(),
-  basePath: "/api/auth",
-  secret: getSecret(),
-  emailAndPassword: {
-    enabled: true,
-    requireEmailVerification: false,
-  },
-  plugins: [twoFactor(), admin()],
-  session: {
-    expiresIn: 60 * 60 * 24 * 7,
-    updateAge: 60 * 60 * 24,
-  },
-})
+/**
+ * Lazy singleton — must be created at request time (not at module load).
+ * During `next build` / static analysis, `DATABASE_URL` is often unset; initializing
+ * `betterAuth` at import time would bind `database: undefined` forever on Vercel.
+ */
+let _auth: ReturnType<typeof betterAuth> | null = null
+
+export function getAuth(): NonNullable<typeof _auth> {
+  if (!_auth) {
+    _auth = betterAuth({
+      database: getAuthDatabase(),
+      baseURL: getSiteBaseURL(),
+      basePath: "/api/auth",
+      secret: getSecret(),
+      emailAndPassword: {
+        enabled: true,
+        requireEmailVerification: false,
+      },
+      plugins: [twoFactor(), admin()],
+      session: {
+        expiresIn: 60 * 60 * 24 * 7,
+        updateAge: 60 * 60 * 24,
+      },
+    })
+  }
+  return _auth
+}
+
+export type Session = ReturnType<typeof getAuth>["$Infer"]["Session"]
 
 let schemaReady: Promise<void> | null = null
 
@@ -146,11 +150,9 @@ export async function ensureBetterAuthSchema(): Promise<void> {
   if (!getAuthDatabase()) return
   if (!schemaReady) {
     schemaReady = (async () => {
-      const ctx = await auth.$context
+      const ctx = await getAuth().$context
       await ctx.runMigrations()
     })()
   }
   await schemaReady
 }
-
-export type Session = typeof auth.$Infer.Session
