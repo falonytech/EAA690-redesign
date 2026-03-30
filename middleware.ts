@@ -8,25 +8,29 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Explicitly handle /login and /sign-in to prevent any external redirects
-  if (pathname === '/login' || pathname === '/sign-in') {
-    // Allow the request to proceed to our Next.js login page
+  // Never run custom logic on Next.js internals (CSS, JS, HMR, fonts, etc.).
+  // Defensive guard — matcher should already skip these, but this avoids edge cases
+  // where middleware could run on /_next/* and break styles in dev.
+  if (pathname.startsWith('/_next')) {
     return NextResponse.next()
   }
 
-  // For all other routes, proceed normally
+  if (pathname === '/login' || pathname === '/sign-in') {
+    return NextResponse.next()
+  }
+
   return NextResponse.next()
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all paths except Next.js internals and typical static assets.
-     * Exclude the full `/_next` prefix (not only `_next/static`) so dev chunks,
-     * HMR, and CSS never pass through middleware — mis-matched middleware here
-     * can break styles on some routes in development.
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
      */
-    '/((?!api|_next|favicon.ico|.*\\..*).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 }
-
