@@ -1,21 +1,42 @@
-import { createClient } from '@sanity/client'
+import { createClient, type SanityClient } from '@sanity/client'
 import imageUrlBuilder from '@sanity/image-url'
 import type { SanityImageSource } from '@sanity/image-url'
 
-// Sanity client configuration
-// You'll need to create a Sanity project at sanity.io and get these values
-export const sanityClient = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || '',
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
-  apiVersion: '2024-01-01',
-  useCdn: process.env.NODE_ENV === 'production',
-})
+let _client: SanityClient | null | undefined
+
+/**
+ * Returns a Sanity client when NEXT_PUBLIC_SANITY_PROJECT_ID is set; otherwise null.
+ * Never calls createClient with an empty projectId (that throws and breaks Vercel builds).
+ */
+function getSanityClient(): SanityClient | null {
+  if (_client !== undefined) return _client
+  const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID?.trim()
+  if (!projectId) {
+    _client = null
+    return null
+  }
+  _client = createClient({
+    projectId,
+    dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
+    apiVersion: '2024-01-01',
+    useCdn: process.env.NODE_ENV === 'production',
+  })
+  return _client
+}
+
+export function isSanityConfigured(): boolean {
+  return Boolean(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID?.trim())
+}
 
 // Image URL builder for Sanity images
-const builder = imageUrlBuilder(sanityClient)
-
 export function urlFor(source: SanityImageSource) {
-  return builder.image(source)
+  const client = getSanityClient()
+  if (!client) {
+    throw new Error(
+      'Sanity is not configured. Set NEXT_PUBLIC_SANITY_PROJECT_ID (and dataset) in the environment.'
+    )
+  }
+  return imageUrlBuilder(client).image(source)
 }
 
 // ============================================
@@ -24,7 +45,9 @@ export function urlFor(source: SanityImageSource) {
 
 // Fetch all upcoming events (sorted by date)
 export async function getUpcomingEvents() {
-  return sanityClient.fetch(`
+  const client = getSanityClient()
+  if (!client) return []
+  return client.fetch(`
     *[_type == "event" && date >= now()] | order(date asc) {
       _id,
       title,
@@ -40,7 +63,10 @@ export async function getUpcomingEvents() {
 
 // Fetch a single event by slug
 export async function getEventBySlug(slug: string) {
-  return sanityClient.fetch(`
+  const client = getSanityClient()
+  if (!client) return null
+  return client.fetch(
+    `
     *[_type == "event" && slug.current == $slug][0] {
       _id,
       title,
@@ -53,13 +79,17 @@ export async function getEventBySlug(slug: string) {
       image,
       content
     }
-  `, { slug })
+  `,
+    { slug }
+  )
 }
 
 // Fetch all news articles (sorted by date, newest first)
 export async function getNewsArticles(limit?: number) {
+  const client = getSanityClient()
+  if (!client) return []
   const limitClause = limit ? `[0...${limit}]` : ''
-  return sanityClient.fetch(`
+  return client.fetch(`
     *[_type == "newsArticle"] | order(publishedAt desc) ${limitClause} {
       _id,
       title,
@@ -74,7 +104,10 @@ export async function getNewsArticles(limit?: number) {
 
 // Fetch a single news article by slug
 export async function getNewsArticleBySlug(slug: string) {
-  return sanityClient.fetch(`
+  const client = getSanityClient()
+  if (!client) return null
+  return client.fetch(
+    `
     *[_type == "newsArticle" && slug.current == $slug][0] {
       _id,
       title,
@@ -85,13 +118,17 @@ export async function getNewsArticleBySlug(slug: string) {
       image,
       author
     }
-  `, { slug })
+  `,
+    { slug }
+  )
 }
 
 // Fetch presentations/speakers
 export async function getPresentations(limit?: number) {
+  const client = getSanityClient()
+  if (!client) return []
   const limitClause = limit ? `[0...${limit}]` : ''
-  return sanityClient.fetch(`
+  return client.fetch(`
     *[_type == "presentation"] | order(date desc) ${limitClause} {
       _id,
       title,
@@ -106,7 +143,9 @@ export async function getPresentations(limit?: number) {
 
 // Fetch upcoming/featured presentation
 export async function getFeaturedPresentation() {
-  return sanityClient.fetch(`
+  const client = getSanityClient()
+  if (!client) return null
+  return client.fetch(`
     *[_type == "presentation" && date >= now()] | order(date asc) [0] {
       _id,
       title,
@@ -121,7 +160,10 @@ export async function getFeaturedPresentation() {
 
 // Fetch page content by slug (for generic editable pages)
 export async function getPageBySlug(slug: string) {
-  return sanityClient.fetch(`
+  const client = getSanityClient()
+  if (!client) return null
+  return client.fetch(
+    `
     *[_type == "page" && slug.current == $slug][0] {
       _id,
       title,
@@ -129,12 +171,16 @@ export async function getPageBySlug(slug: string) {
       content,
       seo
     }
-  `, { slug })
+  `,
+    { slug }
+  )
 }
 
 // Fetch site settings (logo, contact info, social links, etc.)
 export async function getSiteSettings() {
-  return sanityClient.fetch(`
+  const client = getSanityClient()
+  if (!client) return null
+  return client.fetch(`
     *[_type == "siteSettings"][0] {
       siteName,
       tagline,
@@ -152,7 +198,9 @@ export async function getSiteSettings() {
 
 // Fetch board members
 export async function getBoardMembers() {
-  return sanityClient.fetch(`
+  const client = getSanityClient()
+  if (!client) return []
+  return client.fetch(`
     *[_type == "boardMember"] | order(order asc) {
       _id,
       name,
