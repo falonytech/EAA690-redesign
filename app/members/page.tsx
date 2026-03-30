@@ -1,5 +1,3 @@
-'use client'
-
 import Link from 'next/link'
 import AuthGuard from '@/components/AuthGuard'
 
@@ -8,7 +6,7 @@ export default function MembersPage() {
     <AuthGuard requireAuth={true}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-4xl font-bold text-eaa-blue mb-8">Members Area</h1>
-        
+
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-eaa-blue mb-4">Welcome, Member!</h2>
           <p className="text-gray-700 mb-4">
@@ -41,4 +39,3 @@ export default function MembersPage() {
     </AuthGuard>
   )
 }
-

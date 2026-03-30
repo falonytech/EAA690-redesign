@@ -21,13 +21,12 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
+     * Match all paths except Next.js internals and typical static assets.
+     * Exclude the full `/_next` prefix (not only `_next/static`) so dev chunks,
+     * HMR, and CSS never pass through middleware — mis-matched middleware here
+     * can break styles on some routes in development.
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_next|favicon.ico|.*\\..*).*)',
   ],
 }
 
