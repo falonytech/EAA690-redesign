@@ -153,6 +153,11 @@ export async function ensureBetterAuthSchema(): Promise<void> {
       const ctx = await getAuth().$context
       await ctx.runMigrations()
     })().catch((err) => {
+      // "already exists" (42P07) means tables are already set up — safe to ignore
+      const msg: string = err?.message ?? ""
+      if (msg.includes("already exists")) {
+        return
+      }
       schemaReady = null
       throw err
     })
