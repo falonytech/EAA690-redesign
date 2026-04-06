@@ -8,16 +8,14 @@ let _client: SanityClient | null | undefined
  * Returns a Sanity client when NEXT_PUBLIC_SANITY_PROJECT_ID is set; otherwise null.
  * Never calls createClient with an empty projectId (that throws and breaks Vercel builds).
  */
+const SANITY_PROJECT_ID = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID?.trim() || 'itqpjbjj'
+const SANITY_DATASET = process.env.NEXT_PUBLIC_SANITY_DATASET?.trim() || 'production'
+
 function getSanityClient(): SanityClient | null {
   if (_client !== undefined) return _client
-  const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID?.trim()
-  if (!projectId) {
-    _client = null
-    return null
-  }
   _client = createClient({
-    projectId,
-    dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
+    projectId: SANITY_PROJECT_ID,
+    dataset: SANITY_DATASET,
     apiVersion: '2024-01-01',
     useCdn: process.env.NODE_ENV === 'production',
   })
@@ -25,7 +23,7 @@ function getSanityClient(): SanityClient | null {
 }
 
 export function isSanityConfigured(): boolean {
-  return Boolean(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID?.trim())
+  return true
 }
 
 // Image URL builder for Sanity images
