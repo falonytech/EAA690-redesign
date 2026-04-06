@@ -47,14 +47,19 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-eaa-blue">
-            Sign in to your account
+            Welcome back
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link href="/signup" className="font-medium text-eaa-blue hover:text-eaa-light-blue">
-              create a new account
+          <div className="mt-6 flex rounded-lg border border-gray-200 overflow-hidden">
+            <span className="flex-1 py-2 px-4 text-sm font-semibold text-center bg-eaa-blue text-white">
+              Login
+            </span>
+            <Link
+              href="/signup"
+              className="flex-1 py-2 px-4 text-sm font-semibold text-center bg-white text-eaa-blue hover:bg-gray-50 transition-colors"
+            >
+              Register
             </Link>
-          </p>
+          </div>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (

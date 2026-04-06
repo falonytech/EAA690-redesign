@@ -34,7 +34,6 @@ export default function Navigation() {
     : null
 
   const navigation = [
-    { name: 'Home', href: '/' },
     {
       name: 'Chapter',
       href: '/chapter',
@@ -43,7 +42,7 @@ export default function Navigation() {
         { name: 'Board', href: '/chapter/board' },
         { name: 'Bylaws & Minutes', href: '/chapter/bylaws' },
         { name: 'General Info', href: '/chapter/general-info' },
-        { name: 'Hangar Rental', href: '/chapter/hangar-rental' },
+        ...(session ? [{ name: 'Hangar Rental', href: '/chapter/hangar-rental' }] : []),
         { name: 'Visit Us', href: '/chapter/visit-us' },
       ],
     },
@@ -66,6 +65,7 @@ export default function Navigation() {
         { name: 'Young Eagles', href: '/programs/young-eagles' },
       ],
     },
+    ...(session ? [{ name: 'Members', href: '/members' }] : []),
     { name: 'Store', href: '/store' },
     { name: 'Contact', href: '/contact' },
   ]
@@ -75,7 +75,7 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3">
+          <Link href="/" className="flex shrink-0 items-center space-x-3">
             <Image
               src="/logo.png"
               alt="EAA 690 Logo"
@@ -89,12 +89,12 @@ export default function Navigation() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-6">
+          <div className="hidden lg:flex flex-1 justify-center items-center space-x-1">
             {navigation.map((item) => (
               <div key={item.name} className="relative group">
                 <Link
                   href={item.href}
-                  className="px-3 py-2 text-sm font-medium hover:text-eaa-yellow transition-colors"
+                  className="px-2 py-2 text-sm font-medium hover:text-eaa-yellow transition-colors whitespace-nowrap"
                 >
                   {item.name}
                 </Link>
@@ -118,20 +118,21 @@ export default function Navigation() {
           </div>
 
           {/* Right side actions */}
-          <div className="hidden lg:flex items-center space-x-4">
+          <div className="hidden lg:flex shrink-0 items-center space-x-2">
             {isPending ? (
               <div className="px-4 py-2 text-sm font-medium opacity-0">Login</div>
             ) : session ? (
               <div className="flex items-center space-x-4 min-w-0">
-                <span
-                  className="text-sm text-gray-200 min-w-0 max-w-[10rem] xl:max-w-[13rem] truncate"
-                  title={navUserLabel?.full || undefined}
+                <Link
+                  href="/members"
+                  className="text-sm text-gray-200 min-w-0 max-w-[10rem] xl:max-w-[13rem] truncate hover:text-eaa-yellow transition-colors"
+                  title={navUserLabel?.full ? `${navUserLabel.full} — Members area` : 'Members area'}
                 >
                   {navUserLabel?.compact ||
                     session.user?.name ||
                     session.user?.email ||
                     'Account'}
-                </span>
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="px-4 py-2 text-sm font-medium hover:text-eaa-yellow transition-colors"
@@ -147,7 +148,7 @@ export default function Navigation() {
                 Login
               </Link>
             )}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               <a href="#" className="hover:text-eaa-yellow transition-colors" aria-label="Twitter">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" />
@@ -225,9 +226,13 @@ export default function Navigation() {
               ))}
               {isPending ? null : session ? (
                 <div>
-                  <div className="block px-3 py-2 text-sm text-gray-200">
+                  <Link
+                    href="/members"
+                    className="block px-3 py-2 text-sm text-gray-200 hover:bg-eaa-light-blue rounded-md"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
                     {session.user?.name || session.user?.email}
-                  </div>
+                  </Link>
                   <button
                     onClick={() => {
                       handleLogout()

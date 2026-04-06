@@ -61,12 +61,17 @@ export default function SignupPage() {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-eaa-blue">
             Create your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link href="/sign-in" className="font-medium text-eaa-blue hover:text-eaa-light-blue">
-              Sign in
+          <div className="mt-6 flex rounded-lg border border-gray-200 overflow-hidden">
+            <Link
+              href="/sign-in"
+              className="flex-1 py-2 px-4 text-sm font-semibold text-center bg-white text-eaa-blue hover:bg-gray-50 transition-colors"
+            >
+              Login
             </Link>
-          </p>
+            <span className="flex-1 py-2 px-4 text-sm font-semibold text-center bg-eaa-blue text-white">
+              Register
+            </span>
+          </div>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (

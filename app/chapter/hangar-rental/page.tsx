@@ -1,5 +1,8 @@
+import AuthGuard from '@/components/AuthGuard'
+
 export default function HangarRentalPage() {
   return (
+    <AuthGuard requireAuth={true}>
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <h1 className="text-4xl font-bold text-eaa-blue mb-8">Hangar Rental</h1>
       
@@ -86,6 +89,7 @@ export default function HangarRentalPage() {
         </section>
       </div>
     </div>
+    </AuthGuard>
   )
 }
 
