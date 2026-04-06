@@ -65,8 +65,18 @@ export async function GET(request: NextRequest) {
     }
     
     // Get all users (limited to 10 for privacy)
+    // Dynamically build the SELECT based on columns that actually exist
+    const existingCols = columnCheck.rows.map((r: { column_name: string }) => r.column_name)
+    const wantedCols = ['id', 'email', 'name', 'role', 'created_at', 'createdAt', 'emailVerified', 'email_verified']
+    const selectCols = wantedCols
+      .filter(col => existingCols.includes(col))
+      .map(col => `"${col}"`)
+      .join(', ')
+    const orderByCol = existingCols.includes('created_at') ? '"created_at"'
+      : existingCols.includes('createdAt') ? '"createdAt"'
+      : '"id"'
     const allUsersResult = await pool.query(
-      'SELECT id, email, name, "emailVerified", "email_verified", role, created_at FROM "user" ORDER BY created_at DESC LIMIT 10'
+      `SELECT ${selectCols} FROM "user" ORDER BY ${orderByCol} DESC LIMIT 10`
     )
 
     return NextResponse.json({
