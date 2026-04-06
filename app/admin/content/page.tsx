@@ -130,16 +130,20 @@ function ContentInner() {
         </Link>
       </div>
 
-      {/* Toast */}
+      {/* Toast — role="status" announces success; aria-live keeps it polite */}
       {toast && (
-        <div className="mb-4 px-4 py-3 rounded-md bg-green-50 border border-green-200 text-sm text-green-800">
+        <div
+          role="status"
+          aria-live="polite"
+          className="mb-4 px-4 py-3 rounded-md bg-green-50 border border-green-200 text-sm text-green-800"
+        >
           {toast}
         </div>
       )}
 
       {/* Error */}
       {error && (
-        <div className="mb-4 px-4 py-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-800">
+        <div role="alert" aria-live="assertive" className="mb-4 px-4 py-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-800">
           {error}
           {error.includes('SANITY_API_TOKEN') && (
             <p className="mt-1 text-xs">

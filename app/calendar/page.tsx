@@ -82,7 +82,7 @@ export default async function CalendarPage() {
         <div>
           <h1 className="text-4xl font-bold text-eaa-blue">Calendar</h1>
           <p className="text-gray-500 mt-2">
-            Click any event for details. Use Month or List view to browse.
+            Select any event for details. Use Month or List view to browse.
           </p>
         </div>
         <a
@@ -92,7 +92,7 @@ export default async function CalendarPage() {
           className="inline-flex items-center gap-2 text-sm text-eaa-light-blue hover:text-eaa-blue transition-colors font-medium"
           title="Manage events in Sanity Studio"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
           </svg>
           Manage Events

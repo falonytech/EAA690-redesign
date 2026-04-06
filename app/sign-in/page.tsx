@@ -6,11 +6,17 @@ import Link from 'next/link'
 import PasswordField from '@/components/PasswordField'
 import { signIn } from '@/lib/better-auth-client'
 
+/** Only allow relative paths — reject absolute URLs to prevent open redirect. */
+function safeRedirect(value: string | null): string {
+  if (value && /^\/(?!\/)/.test(value)) return value
+  return '/members'
+}
+
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirect = searchParams?.get('redirect') || '/members'
-  
+  const redirect = safeRedirect(searchParams?.get('redirect'))
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -22,21 +28,15 @@ function LoginForm() {
     setIsLoading(true)
 
     try {
-      const result = await signIn.email({
-        email,
-        password,
-      })
-
+      const result = await signIn.email({ email, password })
       if ('error' in result && result.error) {
         setError((result.error as { message?: string }).message || 'Invalid email or password')
       } else {
-        // Successful login - redirect to the intended page or members area
         router.push(redirect)
         router.refresh()
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please try again.')
-      console.error('Login error:', err)
     } finally {
       setIsLoading(false)
     }
@@ -46,11 +46,14 @@ function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-eaa-blue">
+          <h1 className="mt-6 text-center text-3xl font-extrabold text-eaa-blue">
             Welcome back
-          </h2>
-          <div className="mt-6 flex rounded-lg border border-gray-200 overflow-hidden">
-            <span className="flex-1 py-2 px-4 text-sm font-semibold text-center bg-eaa-blue text-white">
+          </h1>
+          <div className="mt-6 flex rounded-lg border border-gray-200 overflow-hidden" role="tablist">
+            <span
+              className="flex-1 py-2 px-4 text-sm font-semibold text-center bg-eaa-blue text-white"
+              aria-current="page"
+            >
               Login
             </span>
             <Link
@@ -61,17 +64,18 @@ function LoginForm() {
             </Link>
           </div>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit} noValidate>
+          {/* role="alert" ensures screen readers announce errors immediately on submit */}
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
+            <div className="rounded-md bg-red-50 p-4" role="alert" aria-live="assertive">
               <div className="text-sm text-red-800">{error}</div>
             </div>
           )}
+
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
+              <label htmlFor="email" className="sr-only">Email address</label>
               <input
                 id="email"
                 name="email"
@@ -85,9 +89,7 @@ function LoginForm() {
               />
             </div>
             <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
+              <label htmlFor="password" className="sr-only">Password</label>
               <PasswordField
                 id="password"
                 name="password"
@@ -113,7 +115,6 @@ function LoginForm() {
                 Remember me
               </label>
             </div>
-
             <div className="text-sm">
               <Link href="/forgot-password" className="font-medium text-eaa-blue hover:text-eaa-light-blue">
                 Forgot your password?
@@ -125,9 +126,10 @@ function LoginForm() {
             <button
               type="submit"
               disabled={isLoading}
+              aria-busy={isLoading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-eaa-blue hover:bg-eaa-light-blue focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-eaa-blue disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? 'Signing in…' : 'Sign in'}
             </button>
           </div>
         </form>
@@ -136,9 +138,17 @@ function LoginForm() {
   )
 }
 
+function LoginFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-8 h-8 border-4 border-eaa-blue border-t-transparent rounded-full animate-spin" aria-label="Loading" />
+    </div>
+  )
+}
+
 export default function LoginPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<LoginFallback />}>
       <LoginForm />
     </Suspense>
   )

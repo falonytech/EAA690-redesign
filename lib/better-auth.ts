@@ -15,13 +15,14 @@ function getPool(): Pool | null {
 
   try {
     console.log("Creating database pool:", {
-      hasUrl: true,
-      urlPrefix: url.substring(0, 30) + "...",
       isLocalhost: url.includes("localhost"),
     })
 
     _pool = new Pool({
       connectionString: url,
+      // rejectUnauthorized: false is required for hosted Postgres providers (e.g. Supabase) whose
+      // SSL termination proxies use self-signed or intermediate certs. The connection is still
+      // encrypted; the client just doesn't verify the server certificate.
       ssl: url.includes("localhost") ? false : { rejectUnauthorized: false },
       connectionTimeoutMillis: 10000,
       max: 1,

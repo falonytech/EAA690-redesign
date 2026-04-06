@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useId } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import listPlugin from '@fullcalendar/list'
@@ -160,11 +160,42 @@ function downloadIcs(event: Event): void {
 }
 
 // ─── Event detail modal ───────────────────────────────────────────────────────
+const FOCUSABLE_SELECTORS =
+  'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
+
 function EventDetail({ event, onClose }: { event: Event; onClose: () => void }) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const titleId   = useId()
+
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
+    const previouslyFocused = document.activeElement as HTMLElement | null
+
+    // Move focus into the dialog on open
+    dialogRef.current?.focus()
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onClose(); return }
+      if (e.key !== 'Tab') return
+
+      const dialog = dialogRef.current
+      if (!dialog) return
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS))
+      if (!focusable.length) return
+      const first = focusable[0]
+      const last  = focusable[focusable.length - 1]
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault(); last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault(); first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      previouslyFocused?.focus()
+    }
   }, [onClose])
 
   const colors = EVENT_COLORS[event.eventType ?? 'default']
@@ -175,17 +206,20 @@ function EventDetail({ event, onClose }: { event: Event; onClose: () => void }) 
       onClick={onClose}
       role="dialog"
       aria-modal="true"
+      aria-labelledby={titleId}
     >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
       <div
-        className="relative bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden animate-slide-up"
+        ref={dialogRef}
+        tabIndex={-1}
+        className="relative bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden animate-slide-up focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Coloured header */}
         <div className="px-6 py-5" style={{ backgroundColor: colors.bg }}>
           <div className="flex items-start justify-between gap-4">
-            <h2 className="text-xl font-bold text-white leading-snug">{event.title}</h2>
+            <h2 id={titleId} className="text-xl font-bold text-white leading-snug">{event.title}</h2>
             <button
               onClick={onClose}
               className="flex-shrink-0 text-white/70 hover:text-white transition-colors mt-0.5"
@@ -348,9 +382,10 @@ export default function EventCalendar({ events }: { events: Event[] }) {
     <div>
       {/* View toggle + legend row */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div className="flex gap-2">
+        <div className="flex gap-2" role="group" aria-label="Calendar view">
           <button
             onClick={() => handleViewChange('dayGridMonth')}
+            aria-pressed={view === 'dayGridMonth'}
             className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
               view === 'dayGridMonth'
                 ? 'bg-eaa-blue text-white shadow-sm'
@@ -361,6 +396,7 @@ export default function EventCalendar({ events }: { events: Event[] }) {
           </button>
           <button
             onClick={() => handleViewChange('listYear')}
+            aria-pressed={view === 'listYear'}
             className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
               view === 'listYear'
                 ? 'bg-eaa-blue text-white shadow-sm'
@@ -371,17 +407,18 @@ export default function EventCalendar({ events }: { events: Event[] }) {
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-x-4 gap-y-2">
+        <ul className="flex flex-wrap gap-x-4 gap-y-2 list-none p-0 m-0" aria-label="Event type legend">
           {LEGEND_ITEMS.map(({ label, type }) => (
-            <div key={type} className="flex items-center gap-1.5 text-xs text-gray-600">
+            <li key={type} className="flex items-center gap-1.5 text-xs text-gray-600">
               <span
                 className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                 style={{ backgroundColor: EVENT_COLORS[type].bg }}
+                aria-hidden="true"
               />
               {label}
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
 
       {/* Calendar */}

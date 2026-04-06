@@ -19,7 +19,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-eaa-blue mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking permissions...</p>
+          <p className="text-gray-600" role="status" aria-live="polite">Checking permissions…</p>
         </div>
       </div>
     )
@@ -32,7 +32,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-eaa-blue mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting to login...</p>
+          <p className="text-gray-600" role="status" aria-live="polite">Redirecting to login…</p>
         </div>
       </div>
     )

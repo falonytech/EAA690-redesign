@@ -32,7 +32,7 @@ export default function AuthGuard({ children, requireAuth = false }: AuthGuardPr
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md px-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-eaa-blue mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking authentication...</p>
+          <p className="text-gray-600" role="status" aria-live="polite">Checking authentication…</p>
           {stalled && (
             <p className="mt-4 text-sm text-gray-500">
               This is taking longer than expected. Try a hard refresh (Ctrl+Shift+R) or stop and restart{' '}
@@ -53,7 +53,7 @@ export default function AuthGuard({ children, requireAuth = false }: AuthGuardPr
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-eaa-blue mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting to login...</p>
+          <p className="text-gray-600" role="status" aria-live="polite">Redirecting to login…</p>
         </div>
       </div>
     )

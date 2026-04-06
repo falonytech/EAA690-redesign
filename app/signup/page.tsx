@@ -43,8 +43,7 @@ export default function SignupPage() {
       if ('error' in result && result.error) {
         setError((result.error as { message?: string }).message || 'Failed to create account')
       } else {
-        // Successful signup - redirect to login or verification page
-        router.push('/sign-in?message=Account created. Please check your email to verify your account.')
+        router.push('/sign-in?message=Account+created+successfully.+Please+sign+in.')
       }
     } catch (err) {
       setError('An error occurred. Please try again.')
@@ -75,7 +74,7 @@ export default function SignupPage() {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
+            <div className="rounded-md bg-red-50 p-4" role="alert" aria-live="assertive">
               <div className="text-sm text-red-800">{error}</div>
             </div>
           )}
@@ -147,9 +146,10 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
+              aria-busy={isLoading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-eaa-blue hover:bg-eaa-light-blue focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-eaa-blue disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Creating account...' : 'Create account'}
+              {isLoading ? 'Creating account…' : 'Create account'}
             </button>
           </div>
         </form>
