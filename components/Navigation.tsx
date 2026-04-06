@@ -40,7 +40,7 @@ export default function Navigation() {
       submenu: [
         { name: 'Agenda', href: '/chapter/agenda' },
         { name: 'Board', href: '/chapter/board' },
-        { name: 'Bylaws & Minutes', href: '/chapter/bylaws' },
+        { name: 'Bylaws', href: '/chapter/bylaws' },
         { name: 'General Info', href: '/chapter/general-info' },
         ...(session ? [{ name: 'Hangar Rental', href: '/chapter/hangar-rental' }] : []),
         { name: 'Visit Us', href: '/chapter/visit-us' },
