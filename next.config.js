@@ -16,6 +16,12 @@ const nextConfig = {
     return []
   },
   async headers() {
+    // In development, skip strict CSP/security headers. Chrome enforces CSP; embedded
+    // IDE browsers often do not — so styles can appear in the IDE but look "unstyled"
+    // in Chrome when Turbopack uses blob: or dev-only asset URLs that violate prod CSP.
+    if (process.env.NODE_ENV === 'development') {
+      return []
+    }
     return [
       {
         source: '/(.*)',

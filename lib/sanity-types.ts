@@ -91,3 +91,24 @@ export interface Page {
     metaDescription?: string
   }
 }
+
+export interface StoreCategory {
+  _id: string
+  title: string
+  slug: { current: string }
+  description?: string
+  sortOrder?: number
+}
+
+export interface StoreProduct {
+  _id: string
+  title: string
+  slug: { current: string }
+  priceDisplay: string
+  shortDescription?: string
+  image?: SanityImage
+  categories: StoreCategory[]
+  externalPurchaseUrl?: string
+  sortOrder?: number
+  isActive?: boolean
+}

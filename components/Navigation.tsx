@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSession, signOut } from '@/lib/better-auth-client'
@@ -15,6 +15,13 @@ export default function Navigation() {
   const isAdmin = useIsAdmin()
   const isEditor = useIsEditor()
   const router = useRouter()
+
+  /** Avoid hydration mismatch: session is null on SSR but loads on client — don't branch nav on session until mounted + session resolved. */
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  const showSessionNavItems = mounted && !isPending && !!session
 
   const handleLogout = async () => {
     await signOut()
@@ -45,7 +52,9 @@ export default function Navigation() {
         { name: 'Board', href: '/chapter/board' },
         { name: 'Bylaws', href: '/chapter/bylaws' },
         { name: 'General Info', href: '/chapter/general-info' },
-        ...(session ? [{ name: 'Hangar Rental', href: '/chapter/hangar-rental' }] : []),
+        ...(showSessionNavItems
+          ? [{ name: 'Hangar Rental', href: '/chapter/hangar-rental' }]
+          : []),
         { name: 'Visit Us', href: '/chapter/visit-us' },
       ],
     },
@@ -67,7 +76,7 @@ export default function Navigation() {
         { name: 'Young Eagles', href: '/programs/young-eagles' },
       ],
     },
-    ...(session ? [{ name: 'Members', href: '/members' }] : []),
+    ...(showSessionNavItems ? [{ name: 'Members', href: '/members' }] : []),
     { name: 'Store', href: '/store' },
     { name: 'Contact', href: '/contact' },
   ]

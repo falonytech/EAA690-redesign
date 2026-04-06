@@ -239,3 +239,48 @@ export async function getBoardMembers() {
     }
   `)
 }
+
+// Store: categories for filters (create documents in Studio → Store Categories)
+export async function getStoreCategories() {
+  const client = getSanityClient()
+  if (!client) return []
+  return client.fetch(`
+    *[_type == "storeCategory"] | order(sortOrder asc, title asc) {
+      _id,
+      title,
+      slug,
+      description,
+      sortOrder
+    }
+  `)
+}
+
+// Store: products with resolved category refs (useCdn off so new items show quickly)
+export async function getStoreProducts() {
+  const freshClient = createClient({
+    projectId: SANITY_PROJECT_ID,
+    dataset: SANITY_DATASET,
+    apiVersion: '2024-01-01',
+    useCdn: false,
+  })
+  return freshClient.fetch(`
+    *[_type == "storeProduct" && (!defined(isActive) || isActive == true)] | order(sortOrder asc, title asc) {
+      _id,
+      title,
+      slug,
+      priceDisplay,
+      shortDescription,
+      image,
+      externalPurchaseUrl,
+      sortOrder,
+      isActive,
+      categories[]->{
+        _id,
+        title,
+        slug,
+        description,
+        sortOrder
+      }
+    }
+  `)
+}

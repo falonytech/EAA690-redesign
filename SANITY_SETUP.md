@@ -11,6 +11,7 @@ We're using Sanity as a headless CMS so chapter volunteers can update:
 - **Board Members** — Current officers and board
 - **Site Settings** — Contact info, breakfast price, newsletter link
 - **Pages** — Generic editable content pages
+- **Store** — Store categories (filters) and products (title, price, image, purchase link)
 
 ## Step 1: Create a Sanity Project
 
@@ -115,6 +116,35 @@ Located in `./sanity/schemas/`:
 | `boardMember.ts` | Officers and board members |
 | `siteSettings.ts` | Global settings (contact, prices, etc.) |
 | `page.ts` | Generic editable pages |
+| `storeCategory.ts` | Store filter groups (memberships, food, prints, etc.) |
+| `storeProduct.ts` | Store items with price text, image, categories, optional checkout URL |
+
+## Store (`/store`)
+
+The live chapter store at [eaa690.org/store](https://www.eaa690.org/store) lists memberships, meals, memorials, prints, merch, and more. The redesign mirrors that inventory using:
+
+1. **Store Category** documents — define filter chips (e.g. *Food & Breakfasts*, *Art & Prints*, *Memorials…*). Set **Sort order** so filters list in a sensible sequence.
+2. **Store Product** documents — each item needs at least one category, a **Price (display)** string (supports text like `$35.00 every 12 months`), optional image, and optional **Purchase URL** pointing at the existing Square/Stripe product on `eaa690.org` (or the main store URL).
+
+Until at least one **active** store product exists in Sanity, `/store` shows **fallback** data modeled on the current public store so the page is never empty.
+
+### Suggested initial categories
+
+Create categories first, then attach them to products (products can have multiple categories):
+
+| Suggested slug | Title |
+|----------------|--------|
+| `memberships` | Memberships |
+| `summer-camp` | Summer Camp Fees |
+| `food-events` | Food & Breakfasts |
+| `fundraisers` | Fundraisers & Special Dinners |
+| `memorials` | Memorials, Plaques & Scholarships |
+| `art-prints` | Art & Prints |
+| `merchandise` | Chapter Merchandise |
+| `fees` | Hangar & Other Fees |
+| `donations` | Donations |
+
+Slugs can be anything; these match the default fallback set for consistency.
 
 ## Fallback Data
 

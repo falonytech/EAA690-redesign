@@ -5,8 +5,10 @@ import { structureTool } from 'sanity/structure'
 import { visionTool } from '@sanity/vision'
 import { schemaTypes } from './sanity/schemas'
 
-const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!
-const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
+/** Match lib/sanity.ts — Studio must always receive a valid id when env is unset (e.g. no .env.local). */
+const projectId =
+  process.env.NEXT_PUBLIC_SANITY_PROJECT_ID?.trim() || 'itqpjbjj'
+const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET?.trim() || 'production'
 
 export default defineConfig({
   basePath: '/studio',
@@ -38,6 +40,9 @@ export default defineConfig({
             S.documentTypeListItem('presentation').title('Presentations'),
             S.documentTypeListItem('boardMember').title('Board Members'),
             S.documentTypeListItem('page').title('Pages'),
+            S.divider(),
+            S.documentTypeListItem('storeCategory').title('Store Categories'),
+            S.documentTypeListItem('storeProduct').title('Store Products'),
           ]),
     }),
     visionTool(),
