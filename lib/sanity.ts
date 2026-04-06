@@ -62,11 +62,17 @@ export async function getUpcomingEvents() {
   `)
 }
 
-// Fetch all events (past + future) for the calendar widget
+// Fetch all events (past + future) for the calendar widget.
+// Uses useCdn:false so freshly published events appear immediately without
+// waiting for Sanity's CDN edge cache to propagate.
 export async function getAllEvents() {
-  const client = getSanityClient()
-  if (!client) return []
-  return client.fetch(`
+  const freshClient = createClient({
+    projectId: SANITY_PROJECT_ID,
+    dataset: SANITY_DATASET,
+    apiVersion: '2024-01-01',
+    useCdn: false,
+  })
+  return freshClient.fetch(`
     *[_type == "event"] | order(date asc) {
       _id,
       title,

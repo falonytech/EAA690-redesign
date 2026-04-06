@@ -2,6 +2,10 @@ import { getAllEvents } from '@/lib/sanity'
 import type { Event } from '@/lib/sanity-types'
 import EventCalendar from '@/components/EventCalendar'
 
+// Always server-render so Sanity events appear immediately after publishing —
+// without this Next.js bakes the page as static HTML at build time.
+export const dynamic = 'force-dynamic'
+
 const fallbackEvents: Event[] = [
   {
     _id: 'fallback-1',
