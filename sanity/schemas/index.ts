@@ -3,6 +3,7 @@ import event from './event'
 import newsArticle from './newsArticle'
 import presentation from './presentation'
 import boardMember from './boardMember'
+import kudos from './kudos'
 import siteSettings from './siteSettings'
 import page from './page'
 import storeCategory from './storeCategory'
@@ -14,6 +15,7 @@ export const schemaTypes = [
   newsArticle,
   presentation,
   boardMember,
+  kudos,
   page,
   storeCategory,
   storeProduct,

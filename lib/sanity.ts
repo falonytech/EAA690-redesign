@@ -240,6 +240,50 @@ export async function getBoardMembers() {
   `)
 }
 
+// Fetch all kudos entries (sorted by manual order, then date desc)
+export async function getKudos() {
+  const client = getSanityClient()
+  if (!client) return []
+  return client.fetch(`
+    *[_type == "kudos"] | order(order asc, date desc) {
+      _id,
+      name,
+      slug,
+      achievement,
+      date,
+      excerpt,
+      featuredImage,
+      "hasGallery": count(gallery) > 0,
+      "galleryCount": count(gallery)
+    }
+  `)
+}
+
+// Fetch a single kudos entry by slug
+export async function getKudosBySlug(slug: string) {
+  const client = getSanityClient()
+  if (!client) return null
+  return client.fetch(
+    `
+    *[_type == "kudos" && slug.current == $slug][0] {
+      _id,
+      name,
+      slug,
+      achievement,
+      date,
+      excerpt,
+      content,
+      featuredImage,
+      gallery[] {
+        ...,
+        caption
+      }
+    }
+  `,
+    { slug }
+  )
+}
+
 // Store: categories for filters (create documents in Studio → Store Categories)
 export async function getStoreCategories() {
   const client = getSanityClient()

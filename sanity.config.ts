@@ -41,6 +41,8 @@ export default defineConfig({
             S.documentTypeListItem('boardMember').title('Board Members'),
             S.documentTypeListItem('page').title('Pages'),
             S.divider(),
+            S.documentTypeListItem('kudos').title('Kudos'),
+            S.divider(),
             S.documentTypeListItem('storeCategory').title('Store Categories'),
             S.documentTypeListItem('storeProduct').title('Store Products'),
           ]),
