@@ -1,56 +1,91 @@
 import Image from 'next/image'
+import { getBoardMembers, urlFor } from '@/lib/sanity'
 
-export default function BoardPage() {
-  const members = [
-    {
-      name: 'Sean Brigham',
-      title: 'President',
-      image: '/images/board/sean-brigham.webp',
-      bio: 'Sean is an Army Aviator and experienced military leader with a strong background in aviation operations, safety, and team leadership. Currently flying as a UH-60 Instructor Pilot but would love to build his own plane.',
-    },
-    {
-      name: 'Billy Stewart',
-      title: 'Vice President',
-      image: '/images/board/billy-stewart.webp',
-      bio: 'Billy is an active member of the chapter, including leading the Youth Aviation Program and teaching the sheet metal classes in Summer Camp. He built a Zenith 601XLB which he flies regularly.',
-    },
-    {
-      name: 'John Murtaugh',
-      title: 'Treasurer',
-      image: '/images/board/john-murtaugh.webp',
-      bio: 'An IT guy who likes to fly. Originally from upstate NY, he moved to Florida in 1998 where he learned to fly, then to Atlanta where he built a Vans RV-9A that he continues to enjoy today. Currently retired and active in the youth build program.',
-    },
-    {
-      name: 'Pam Sidhi',
-      title: 'Secretary',
-      image: '/images/board/pam-sidhi.webp',
-      bio: 'A proud mom, she blends strategy with heart to engage and strengthen the community and chapter.',
-    },
-    {
-      name: 'Peter DiTomaso',
-      title: 'At Large Member',
-      image: '/images/board/peter-ditomaso.webp',
-      bio: 'A Canadian by birth, Peter has been an active chapter member for many years, an avid Oshkosh attendee, and is currently building an RV-7.',
-    },
-    {
-      name: 'Brian Falony',
-      title: 'At Large Member',
-      image: '/images/board/brian-falony.webp',
-      bio: 'Brian is a retired marketing executive with a life-long interest in aviation. He currently serves as Young Eagles Coordinator for the chapter.',
-    },
-    {
-      name: 'John Patchin',
-      title: 'At Large Member',
-      image: '/images/board/john-patchin.webp',
-      bio: "John is part of the kitchen crew and helps cook for the Saturday breakfasts and events throughout the year. He's currently building a Van's RV-4 and owns a Sonex which is hangared at Winder Airport.",
-    },
-    {
-      name: 'Jim Madeley',
-      title: 'At Large Member',
-      image: '/images/board/jim-madeley.webp',
-      bio: 'Jim is a retired orthopedic surgeon, flies an RV-12, and participates regularly in chapter fly-outs to various southeastern venues.',
-    },
-  ]
+interface NormalizedMember {
+  key: string
+  name: string
+  title: string
+  imageSrc: string | null
+  bio: string
+}
+
+// Static fallback — used when Sanity has no boardMember documents yet
+const STATIC_MEMBERS: NormalizedMember[] = [
+  {
+    key: 'sean-brigham',
+    name: 'Sean Brigham',
+    title: 'President',
+    imageSrc: '/images/board/sean-brigham.webp',
+    bio: 'Sean is an Army Aviator and experienced military leader with a strong background in aviation operations, safety, and team leadership. Currently flying as a UH-60 Instructor Pilot but would love to build his own plane.',
+  },
+  {
+    key: 'billy-stewart',
+    name: 'Billy Stewart',
+    title: 'Vice President',
+    imageSrc: '/images/board/billy-stewart.webp',
+    bio: 'Billy is an active member of the chapter, including leading the Youth Aviation Program and teaching the sheet metal classes in Summer Camp. He built a Zenith 601XLB which he flies regularly.',
+  },
+  {
+    key: 'john-murtaugh',
+    name: 'John Murtaugh',
+    title: 'Treasurer',
+    imageSrc: '/images/board/john-murtaugh.webp',
+    bio: 'An IT guy who likes to fly. Originally from upstate NY, he moved to Florida in 1998 where he learned to fly, then to Atlanta where he built a Vans RV-9A that he continues to enjoy today. Currently retired and active in the youth build program.',
+  },
+  {
+    key: 'pam-sidhi',
+    name: 'Pam Sidhi',
+    title: 'Secretary',
+    imageSrc: '/images/board/pam-sidhi.webp',
+    bio: 'A proud mom, she blends strategy with heart to engage and strengthen the community and chapter.',
+  },
+  {
+    key: 'peter-ditomaso',
+    name: 'Peter DiTomaso',
+    title: 'At Large Member',
+    imageSrc: '/images/board/peter-ditomaso.webp',
+    bio: 'A Canadian by birth, Peter has been an active chapter member for many years, an avid Oshkosh attendee, and is currently building an RV-7.',
+  },
+  {
+    key: 'brian-falony',
+    name: 'Brian Falony',
+    title: 'At Large Member',
+    imageSrc: '/images/board/brian-falony.webp',
+    bio: 'Brian is a retired marketing executive with a life-long interest in aviation. He currently serves as Young Eagles Coordinator for the chapter.',
+  },
+  {
+    key: 'john-patchin',
+    name: 'John Patchin',
+    title: 'At Large Member',
+    imageSrc: '/images/board/john-patchin.webp',
+    bio: "John is part of the kitchen crew and helps cook for the Saturday breakfasts and events throughout the year. He's currently building a Van's RV-4 and owns a Sonex which is hangared at Winder Airport.",
+  },
+  {
+    key: 'jim-madeley',
+    name: 'Jim Madeley',
+    title: 'At Large Member',
+    imageSrc: '/images/board/jim-madeley.webp',
+    bio: 'Jim is a retired orthopedic surgeon, flies an RV-12, and participates regularly in chapter fly-outs to various southeastern venues.',
+  },
+]
+
+export default async function BoardPage() {
+  // Try Sanity first; fall back to static data if no documents exist yet
+  let members: NormalizedMember[] = STATIC_MEMBERS
+  try {
+    const sanityMembers = await getBoardMembers()
+    if (sanityMembers && sanityMembers.length > 0) {
+      members = sanityMembers.map((m: any) => ({
+        key: m._id,
+        name: m.name,
+        title: m.role,
+        imageSrc: m.image ? urlFor(m.image).width(600).auto('format').url() : null,
+        bio: m.bio ?? '',
+      }))
+    }
+  } catch {
+    // Sanity not configured or unreachable — static fallback already set
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -58,18 +93,20 @@ export default function BoardPage() {
 
       <div className="space-y-14 mb-16">
         {members.map((member, index) => (
-          <article key={member.name} className="text-center">
-            <div className="rounded-xl overflow-hidden shadow-md mb-4">
-              <Image
-                src={member.image}
-                alt={`Portrait of ${member.name}, ${member.title}`}
-                width={600}
-                height={800}
-                sizes="(max-width: 672px) 100vw, 672px"
-                style={{ width: '100%', height: 'auto' }}
-                {...(index === 0 ? { priority: true } : {})}
-              />
-            </div>
+          <article key={member.key} className="text-center">
+            {member.imageSrc && (
+              <div className="rounded-xl overflow-hidden shadow-md mb-4">
+                <Image
+                  src={member.imageSrc}
+                  alt={`Portrait of ${member.name}, ${member.title}`}
+                  width={600}
+                  height={800}
+                  sizes="(max-width: 672px) 100vw, 672px"
+                  style={{ width: '100%', height: 'auto' }}
+                  {...(index === 0 ? { priority: true } : {})}
+                />
+              </div>
+            )}
             <h2 className="text-2xl font-bold text-eaa-blue">{member.name}</h2>
             <p className="text-eaa-light-blue font-semibold mb-3">{member.title}</p>
             <p className="text-gray-700 leading-relaxed">{member.bio}</p>
