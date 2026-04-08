@@ -5,10 +5,15 @@ import { useEffect, useRef, useState } from 'react'
 import { useStoreCart } from '@/components/StoreCartProvider'
 import { startStoreCartCheckout } from '@/lib/store-checkout-client'
 
+const moneyUsd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+
 export default function StoreCartPage() {
   const { lines, ready, totalItems, setQuantity, remove } = useStoreCart()
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [checkingOut, setCheckingOut] = useState(false)
+  const [subtotalCents, setSubtotalCents] = useState<number | null>(null)
+  const [subtotalIncomplete, setSubtotalIncomplete] = useState(false)
+  const [subtotalLoading, setSubtotalLoading] = useState(false)
   const errorRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -16,6 +21,62 @@ export default function StoreCartPage() {
       errorRef.current.focus()
     }
   }, [checkoutError])
+
+  useEffect(() => {
+    if (!ready || lines.length === 0) {
+      setSubtotalCents(null)
+      setSubtotalIncomplete(false)
+      setSubtotalLoading(false)
+      return
+    }
+
+    const ac = new AbortController()
+    setSubtotalLoading(true)
+    fetch('/api/store/cart-total', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
+      }),
+      credentials: 'same-origin',
+      cache: 'no-store',
+      signal: ac.signal,
+    })
+      .then(async (res) => {
+        let data: { subtotalCents?: unknown; incomplete?: unknown }
+        try {
+          data = (await res.json()) as { subtotalCents?: unknown; incomplete?: unknown }
+        } catch {
+          setSubtotalCents(null)
+          return
+        }
+        if (!res.ok) {
+          setSubtotalCents(null)
+          return
+        }
+        const cents = data.subtotalCents
+        if (
+          typeof cents === 'number' &&
+          Number.isFinite(cents) &&
+          cents >= 0 &&
+          cents <= 50_000_000 &&
+          Number.isInteger(cents)
+        ) {
+          setSubtotalCents(cents)
+          setSubtotalIncomplete(data.incomplete === true)
+        } else {
+          setSubtotalCents(null)
+        }
+      })
+      .catch(() => {
+        if (!ac.signal.aborted) setSubtotalCents(null)
+      })
+      .finally(() => {
+        if (!ac.signal.aborted) setSubtotalLoading(false)
+      })
+
+    return () => ac.abort()
+  }, [ready, lines])
 
   const handleCheckout = async () => {
     if (lines.length === 0) return
@@ -73,11 +134,12 @@ export default function StoreCartPage() {
           </Link>
         </div>
       ) : (
-        <section aria-labelledby="cart-items-heading">
+        <>
+        <section aria-labelledby="cart-items-heading" className="mb-8">
           <h2 id="cart-items-heading" className="sr-only">
             Items in your cart
           </h2>
-          <ul className="divide-y divide-gray-200 border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm mb-8">
+          <ul className="divide-y divide-gray-200 border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
             {lines.map((line) => (
               <li key={line.productId} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4">
                 <div className="flex-1 min-w-0">
@@ -138,11 +200,50 @@ export default function StoreCartPage() {
               </li>
             ))}
           </ul>
+        </section>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {(subtotalLoading || subtotalCents !== null) && (
+          <section
+            aria-labelledby="cart-subtotal-heading"
+            aria-busy={subtotalLoading}
+            aria-live="polite"
+            className="mb-6 rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 sm:px-5"
+          >
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+              <h2
+                id="cart-subtotal-heading"
+                className="text-base font-semibold text-eaa-blue m-0"
+                aria-describedby={
+                  !subtotalLoading && subtotalCents !== null ? 'cart-subtotal-note' : undefined
+                }
+              >
+                Estimated subtotal
+              </h2>
+              {subtotalLoading ? (
+                <span className="text-gray-600">Calculating…</span>
+              ) : subtotalCents !== null ? (
+                <span className="text-2xl font-bold text-eaa-blue tabular-nums">
+                  {moneyUsd.format(subtotalCents / 100)}
+                </span>
+              ) : null}
+            </div>
+            {!subtotalLoading && subtotalCents !== null && (
+              <p id="cart-subtotal-note" className="text-sm text-gray-600 mt-2">
+                {subtotalIncomplete
+                  ? 'Part of this total may be finalized at checkout (some items use Stripe catalog pricing). Tax, if applicable, is calculated on the next page.'
+                  : 'Tax (if applicable) and the final total are confirmed before you pay on the next page.'}
+              </p>
+            )}
+          </section>
+        )}
+
+        <section aria-labelledby="cart-actions-heading" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h2 id="cart-actions-heading" className="sr-only">
+            Cart summary and checkout
+          </h2>
             <p className="text-gray-700">
               <span className="font-semibold text-eaa-blue">{totalItems}</span>{' '}
-              {totalItems === 1 ? 'item' : 'items'} in cart — totals and tax are shown in Stripe checkout.
+              {totalItems === 1 ? 'item' : 'items'} in cart — full breakdown is on Stripe checkout.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
@@ -161,8 +262,8 @@ export default function StoreCartPage() {
                 {checkingOut ? 'Redirecting…' : 'Proceed to checkout'}
               </button>
             </div>
-          </div>
         </section>
+        </>
       )}
     </div>
   )
