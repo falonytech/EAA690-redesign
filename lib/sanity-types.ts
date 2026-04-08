@@ -109,6 +109,7 @@ export interface StoreProduct {
   image?: SanityImage
   categories: StoreCategory[]
   externalPurchaseUrl?: string
+  stripePriceId?: string
   sortOrder?: number
   isActive?: boolean
 }

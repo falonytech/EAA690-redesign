@@ -32,10 +32,10 @@ const nextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           // Limit referrer info sent to third parties
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          // Disable unused browser features
+          // Disable unused browser features; allow payment= for Stripe Payment Request API
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(), payment=()',
+            value: 'camera=(), microphone=(), geolocation=(), payment=(self "js.stripe.com")',
           },
           // Content Security Policy
           // Note: Next.js requires 'unsafe-inline' for its runtime scripts and styles.
@@ -44,14 +44,17 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' js.stripe.com",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: cdn.sanity.io",
+              "img-src 'self' data: blob: cdn.sanity.io *.stripe.com",
               "font-src 'self' fonts.gstatic.com",
-              "connect-src 'self' *.sanity.io api.sanity.io *.supabase.co",
-              "frame-src 'self' *.sanity.io",
+              // Stripe Checkout redirect is same-tab navigation (no fetch needed), but
+              // Stripe.js (if added later) needs connect-src; include now for forward compat.
+              "connect-src 'self' *.sanity.io api.sanity.io *.supabase.co api.stripe.com",
+              "frame-src 'self' *.sanity.io js.stripe.com hooks.stripe.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",
+              // checkout.stripe.com redirect is a GET, not a form POST — 'self' is sufficient
               "form-action 'self'",
             ].join('; '),
           },

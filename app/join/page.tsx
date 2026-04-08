@@ -1,6 +1,21 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 
-const MEMBERSHIP_TIERS = [
+type TierKey = 'student' | 'individual' | 'family'
+
+const MEMBERSHIP_TIERS: Array<{
+  name: string
+  price: string
+  period: string
+  recurring: boolean
+  description: string
+  highlight: boolean
+  benefits: string[]
+  tier: TierKey
+  badge: string | null
+}> = [
   {
     name: 'Student',
     price: '$10',
@@ -15,7 +30,7 @@ const MEMBERSHIP_TIERS = [
       'Voting rights at chapter meetings',
       'Access to member resources',
     ],
-    url: 'https://www.eaa690.org/store/p/student-membership',
+    tier: 'student',
     badge: null,
   },
   {
@@ -33,7 +48,7 @@ const MEMBERSHIP_TIERS = [
       'Access to member resources',
       'Auto-renews annually',
     ],
-    url: 'https://www.eaa690.org/store/p/individual-membership-j9am4-vXxPq',
+    tier: 'individual',
     badge: 'Most Popular',
   },
   {
@@ -51,12 +66,33 @@ const MEMBERSHIP_TIERS = [
       'Access to member resources',
       'Auto-renews annually',
     ],
-    url: 'https://www.eaa690.org/store/p/family-membership-dMl4c',
+    tier: 'family',
     badge: 'Best Value',
   },
 ]
 
 export default function JoinPage() {
+  const [loadingTier, setLoadingTier] = useState<TierKey | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleJoin = async (tier: TierKey) => {
+    setLoadingTier(tier)
+    setError(null)
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'membership', membershipTier: tier }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.url) throw new Error(data.error ?? 'Failed to start checkout')
+      window.location.href = data.url
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+      setLoadingTier(null)
+    }
+  }
+
   return (
     <div>
       {/* Hero */}
@@ -74,7 +110,7 @@ export default function JoinPage() {
 
         {/* National requirement notice */}
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-12 flex gap-4 items-start">
-          <span className="text-amber-500 text-2xl mt-0.5">⚠️</span>
+          <span className="text-amber-500 text-2xl mt-0.5" aria-hidden="true">⚠️</span>
           <div>
             <p className="font-semibold text-amber-900 mb-1">EAA National Membership Required</p>
             <p className="text-amber-800 text-sm leading-relaxed">
@@ -92,6 +128,13 @@ export default function JoinPage() {
             </p>
           </div>
         </div>
+
+        {/* Error banner — role=alert ensures screen readers announce it immediately */}
+        {error && (
+          <div role="alert" className="bg-red-50 border border-red-200 rounded-xl p-4 mb-8 text-red-700 text-sm">
+            {error}
+          </div>
+        )}
 
         {/* Membership tiers */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
@@ -151,6 +194,8 @@ export default function JoinPage() {
                         viewBox="0 0 24 24"
                         stroke="currentColor"
                         strokeWidth={2.5}
+                        aria-hidden="true"
+                        focusable="false"
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
@@ -159,18 +204,23 @@ export default function JoinPage() {
                   ))}
                 </ul>
 
-                <a
-                  href={tier.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`block w-full text-center py-3 rounded-xl font-bold transition-all ${
+                <button
+                  onClick={() => handleJoin(tier.tier)}
+                  disabled={loadingTier !== null}
+                  aria-busy={loadingTier === tier.tier}
+                  aria-label={
+                    loadingTier === tier.tier
+                      ? `Redirecting to checkout for ${tier.name} membership`
+                      : `Join or renew ${tier.name} membership — ${tier.price} ${tier.period}`
+                  }
+                  className={`block w-full text-center py-3 rounded-xl font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-eaa-blue ${
                     tier.highlight
                       ? 'bg-eaa-yellow text-eaa-blue hover:bg-yellow-400 shadow-md'
                       : 'bg-eaa-blue text-white hover:bg-blue-900'
-                  }`}
+                  } disabled:opacity-60 disabled:cursor-not-allowed`}
                 >
-                  Join / Renew
-                </a>
+                  {loadingTier === tier.tier ? 'Redirecting…' : 'Join / Renew'}
+                </button>
               </div>
             </div>
           ))}
@@ -216,7 +266,7 @@ export default function JoinPage() {
               },
             ].map(({ icon, title, desc }) => (
               <div key={title} className="flex gap-4 items-start">
-                <span className="text-3xl">{icon}</span>
+                <span className="text-3xl" aria-hidden="true">{icon}</span>
                 <div>
                   <h3 className="font-bold text-eaa-blue mb-1">{title}</h3>
                   <p className="text-gray-600 text-sm leading-relaxed">{desc}</p>

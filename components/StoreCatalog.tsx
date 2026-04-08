@@ -13,8 +13,33 @@ type Props = {
   fromSanity: boolean
 }
 
+async function startStripeCheckout(stripePriceId: string): Promise<void> {
+  const res = await fetch('/api/stripe/checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'store_product', stripePriceId }),
+  })
+  const data = await res.json()
+  if (!res.ok || !data.url) throw new Error(data.error ?? 'Failed to start checkout')
+  window.location.href = data.url
+}
+
 export default function StoreCatalog({ categories, products, fromSanity }: Props) {
   const [activeSlug, setActiveSlug] = useState<string | 'all'>('all')
+  const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
+
+  const handleBuyWithStripe = async (item: StoreProduct) => {
+    if (!item.stripePriceId) return
+    setLoadingId(item._id)
+    setCheckoutError(null)
+    try {
+      await startStripeCheckout(item.stripePriceId)
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+      setLoadingId(null)
+    }
+  }
 
   const filtered = useMemo(() => {
     if (activeSlug === 'all') return products
@@ -48,7 +73,8 @@ export default function StoreCatalog({ categories, products, fromSanity }: Props
           <button
             type="button"
             onClick={() => setActiveSlug('all')}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+            aria-pressed={activeSlug === 'all'}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-eaa-blue focus-visible:ring-offset-1 ${
               activeSlug === 'all'
                 ? 'bg-eaa-blue text-white'
                 : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
@@ -61,7 +87,8 @@ export default function StoreCatalog({ categories, products, fromSanity }: Props
               key={cat._id}
               type="button"
               onClick={() => setActiveSlug(cat.slug.current)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              aria-pressed={activeSlug === cat.slug.current}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-eaa-blue focus-visible:ring-offset-1 ${
                 activeSlug === cat.slug.current
                   ? 'bg-eaa-blue text-white'
                   : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
@@ -72,6 +99,12 @@ export default function StoreCatalog({ categories, products, fromSanity }: Props
           ))}
         </div>
       </div>
+
+      {checkoutError && (
+        <div role="alert" className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-red-700 text-sm">
+          {checkoutError}
+        </div>
+      )}
 
       {filtered.length === 0 ? (
         <p className="text-gray-600 py-8">No products match this filter.</p>
@@ -112,14 +145,35 @@ export default function StoreCatalog({ categories, products, fromSanity }: Props
                 )}
                 <div className="flex items-center justify-between gap-3 mt-auto pt-2">
                   <span className="text-xl font-bold text-eaa-blue">{item.priceDisplay}</span>
-                  <a
-                    href={item.externalPurchaseUrl || LIVE_STORE}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-eaa-yellow text-eaa-blue px-4 py-2 rounded-md font-semibold hover:bg-yellow-400 transition-colors text-center text-sm whitespace-nowrap"
-                  >
-                    {item.externalPurchaseUrl ? 'Purchase' : 'View on store'}
-                  </a>
+                  {item.stripePriceId ? (
+                    <button
+                      onClick={() => handleBuyWithStripe(item)}
+                      disabled={loadingId !== null}
+                      aria-busy={loadingId === item._id}
+                      aria-label={
+                        loadingId === item._id
+                          ? `Loading checkout for ${item.title}`
+                          : `Purchase ${item.title}`
+                      }
+                      className="bg-eaa-yellow text-eaa-blue px-4 py-2 rounded-md font-semibold hover:bg-yellow-400 transition-colors text-center text-sm whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-eaa-blue focus-visible:ring-offset-1"
+                    >
+                      {loadingId === item._id ? 'Loading…' : 'Purchase'}
+                    </button>
+                  ) : (
+                    <a
+                      href={item.externalPurchaseUrl || LIVE_STORE}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={
+                        item.externalPurchaseUrl
+                          ? `Purchase ${item.title} (opens external site)`
+                          : `View ${item.title} on the chapter store (opens external site)`
+                      }
+                      className="bg-eaa-yellow text-eaa-blue px-4 py-2 rounded-md font-semibold hover:bg-yellow-400 transition-colors text-center text-sm whitespace-nowrap"
+                    >
+                      {item.externalPurchaseUrl ? 'Purchase' : 'View on store'}
+                    </a>
+                  )}
                 </div>
               </div>
             </article>

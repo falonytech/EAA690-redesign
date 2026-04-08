@@ -43,11 +43,18 @@ export default {
       validation: (Rule: any) => Rule.required().min(1),
     },
     {
+      name: 'stripePriceId',
+      title: 'Stripe Price ID',
+      type: 'string',
+      description:
+        'Paste the Stripe Price ID (e.g. price_1ABCxyz…) from your Stripe Dashboard → Products. When set, the "Purchase" button goes directly to Stripe Checkout on this site. Takes priority over Purchase URL.',
+    },
+    {
       name: 'externalPurchaseUrl',
-      title: 'Purchase URL (optional)',
+      title: 'Purchase URL (fallback)',
       type: 'url',
       description:
-        'Link to the live Square/Stripe product on eaa690.org, or another checkout page. If empty, the button links to the main chapter store.',
+        'Fallback link if no Stripe Price ID is set. Links to an external checkout page (e.g. legacy eaa690.org store).',
     },
     {
       name: 'sortOrder',

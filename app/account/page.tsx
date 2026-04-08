@@ -9,6 +9,26 @@ export default function AccountPage() {
   const { data: session } = useSession()
   const [mfaEnabled, setMfaEnabled] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [portalLoading, setPortalLoading] = useState(false)
+  const [portalError, setPortalError] = useState<string | null>(null)
+
+  const handleManageSubscription = async () => {
+    setPortalLoading(true)
+    setPortalError(null)
+    try {
+      const res = await fetch('/api/stripe/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.url) throw new Error(data.error ?? 'Failed to open portal')
+      window.location.href = data.url
+    } catch (err) {
+      setPortalError(err instanceof Error ? err.message : 'Something went wrong.')
+      setPortalLoading(false)
+    }
+  }
 
   // TODO: Implement MFA enable/disable functionality
   // This will require additional BetterAuth API calls
@@ -28,30 +48,25 @@ export default function AccountPage() {
         
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-2xl font-bold text-eaa-blue mb-4">Profile Information</h2>
-          <div className="space-y-4">
+          {/* Use dl/dt/dd — <label> is only valid when associated with an interactive control */}
+          <dl className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name
-              </label>
-              <p className="text-gray-900">{session?.user?.name || 'Not set'}</p>
+              <dt className="text-sm font-medium text-gray-700 mb-1">Name</dt>
+              <dd className="text-gray-900">{session?.user?.name || 'Not set'}</dd>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <p className="text-gray-900">{session?.user?.email}</p>
+              <dt className="text-sm font-medium text-gray-700 mb-1">Email</dt>
+              <dd className="text-gray-900">{session?.user?.email}</dd>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Account Created
-              </label>
-              <p className="text-gray-900">
-                {session?.user?.createdAt 
+              <dt className="text-sm font-medium text-gray-700 mb-1">Account Created</dt>
+              <dd className="text-gray-900">
+                {session?.user?.createdAt
                   ? new Date(session.user.createdAt).toLocaleDateString()
                   : 'N/A'}
-              </p>
+              </dd>
             </div>
-          </div>
+          </dl>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -92,6 +107,33 @@ export default function AccountPage() {
               Change Password →
             </Link>
           </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-2xl font-bold text-eaa-blue mb-1">Membership</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Manage your chapter membership billing, cancel or update your subscription, and download receipts.
+          </p>
+          {portalError && (
+            <p role="alert" className="text-sm text-red-600 bg-red-50 rounded-lg px-4 py-2 mb-4">
+              {portalError}
+            </p>
+          )}
+          <button
+            onClick={handleManageSubscription}
+            disabled={portalLoading}
+            aria-busy={portalLoading}
+            aria-label={portalLoading ? 'Opening billing portal, please wait' : 'Manage your subscription'}
+            className="bg-eaa-blue text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-blue-900 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {portalLoading ? 'Opening…' : 'Manage Subscription →'}
+          </button>
+          <p className="text-xs text-gray-400 mt-3">
+            Not yet a member?{' '}
+            <Link href="/join" className="text-eaa-light-blue hover:underline font-medium">
+              View membership options
+            </Link>
+          </p>
         </div>
 
         <div className="bg-blue-50 p-6 rounded-lg">

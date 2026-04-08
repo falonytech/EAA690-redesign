@@ -1,0 +1,203 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getStripe } from '@/lib/stripe'
+import { getSiteBaseURL } from '@/lib/site-url'
+
+export type CheckoutType = 'donation' | 'membership' | 'store_product'
+
+interface CheckoutBody {
+  type: CheckoutType
+  // Donation — amount in whole dollars (e.g. 25 = $25.00)
+  amount?: number
+  // Membership — 'student' | 'individual' | 'family'
+  membershipTier?: string
+  // Store product — Price ID from Sanity stripePriceId field
+  stripePriceId?: string
+  quantity?: number
+}
+
+// ─── Validation constants ──────────────────────────────────────────────────────
+
+const VALID_CHECKOUT_TYPES = new Set<CheckoutType>(['donation', 'membership', 'store_product'])
+const VALID_MEMBERSHIP_TIERS = new Set(['student', 'individual', 'family'])
+const DONATION_MIN_USD = 1
+const DONATION_MAX_USD = 10_000
+const QUANTITY_MIN = 1
+const QUANTITY_MAX = 10
+// Stripe Price IDs are always "price_" followed by alphanumeric characters
+const STRIPE_PRICE_ID_RE = /^price_[A-Za-z0-9]{8,}$/
+
+const MEMBERSHIP_PRICES: Record<string, string | undefined> = {
+  student: process.env.STRIPE_PRICE_STUDENT_MEMBERSHIP,
+  individual: process.env.STRIPE_PRICE_INDIVIDUAL_MEMBERSHIP,
+  family: process.env.STRIPE_PRICE_FAMILY_MEMBERSHIP,
+}
+
+const MEMBERSHIP_MODE: Record<string, 'payment' | 'subscription'> = {
+  student: 'payment',
+  individual: 'subscription',
+  family: 'subscription',
+}
+
+// ─── Simple in-memory rate limiter ────────────────────────────────────────────
+// Limits checkout session creation to 10 requests per IP per minute.
+// Note: for multi-instance / serverless deployments this only protects
+// within a single process. Replace with Upstash Redis for global limiting.
+
+const RATE_WINDOW_MS = 60_000
+const RATE_LIMIT = 10
+const _rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const entry = _rateLimitMap.get(ip)
+  if (!entry || now > entry.resetAt) {
+    _rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS })
+    return false
+  }
+  if (entry.count >= RATE_LIMIT) return true
+  entry.count++
+  return false
+}
+
+// ─── Route handler ────────────────────────────────────────────────────────────
+
+export async function POST(request: NextRequest) {
+  // Rate-limit by IP (x-forwarded-for on Vercel; remoteAddress elsewhere)
+  const ip =
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    request.headers.get('x-real-ip') ??
+    'unknown'
+
+  if (isRateLimited(ip)) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please wait a moment and try again.' },
+      { status: 429 }
+    )
+  }
+
+  let body: CheckoutBody
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  const { type } = body
+
+  // Validate type before anything else so we never process unknown types
+  if (!type || !VALID_CHECKOUT_TYPES.has(type)) {
+    return NextResponse.json({ error: 'Invalid checkout type' }, { status: 400 })
+  }
+
+  const base = getSiteBaseURL()
+  const stripe = getStripe()
+
+  try {
+    // ── Donation ────────────────────────────────────────────────────────────
+    if (type === 'donation') {
+      const dollars = body.amount
+      if (
+        typeof dollars !== 'number' ||
+        !Number.isFinite(dollars) ||
+        dollars < DONATION_MIN_USD ||
+        dollars > DONATION_MAX_USD
+      ) {
+        return NextResponse.json(
+          { error: `Donation amount must be between $${DONATION_MIN_USD} and $${DONATION_MAX_USD}.` },
+          { status: 400 }
+        )
+      }
+      const cents = Math.round(dollars * 100)
+
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: 'usd',
+              unit_amount: cents,
+              product_data: {
+                name: 'Donation — EAA Chapter 690',
+                description: 'Tax-deductible donation to EAA Chapter 690 (501(c)(3))',
+                images: [`${base}/logo.png`],
+              },
+            },
+          },
+        ],
+        submit_type: 'donate',
+        success_url: `${base}/donate/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${base}/donate`,
+        metadata: { type: 'donation' },
+      })
+
+      return NextResponse.json({ url: session.url })
+    }
+
+    // ── Membership ──────────────────────────────────────────────────────────
+    if (type === 'membership') {
+      const tier = body.membershipTier
+
+      // Validate tier against known set before touching MEMBERSHIP_PRICES
+      if (!tier || !VALID_MEMBERSHIP_TIERS.has(tier)) {
+        return NextResponse.json({ error: 'Invalid membership tier.' }, { status: 400 })
+      }
+
+      const priceId = MEMBERSHIP_PRICES[tier]
+      if (!priceId) {
+        return NextResponse.json(
+          { error: 'Membership pricing is not configured yet. Please contact us.' },
+          { status: 503 }
+        )
+      }
+
+      const mode = MEMBERSHIP_MODE[tier]
+
+      const session = await stripe.checkout.sessions.create({
+        mode,
+        line_items: [{ price: priceId, quantity: 1 }],
+        allow_promotion_codes: true,
+        success_url: `${base}/join/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${base}/join`,
+        metadata: { type: 'membership', tier },
+      })
+
+      return NextResponse.json({ url: session.url })
+    }
+
+    // ── Store product ───────────────────────────────────────────────────────
+    if (type === 'store_product') {
+      const priceId = body.stripePriceId
+
+      // Validate Price ID format — prevents injecting arbitrary IDs
+      if (!priceId || !STRIPE_PRICE_ID_RE.test(priceId)) {
+        return NextResponse.json({ error: 'Invalid product price reference.' }, { status: 400 })
+      }
+
+      const rawQty = body.quantity ?? 1
+      const quantity =
+        Number.isInteger(rawQty) && rawQty >= QUANTITY_MIN && rawQty <= QUANTITY_MAX
+          ? rawQty
+          : null
+      if (quantity === null) {
+        return NextResponse.json(
+          { error: `Quantity must be between ${QUANTITY_MIN} and ${QUANTITY_MAX}.` },
+          { status: 400 }
+        )
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        line_items: [{ price: priceId, quantity }],
+        success_url: `${base}/store/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${base}/store`,
+        metadata: { type: 'store_product' },
+      })
+
+      return NextResponse.json({ url: session.url })
+    }
+  } catch (error) {
+    console.error('Stripe checkout error:', error)
+    return NextResponse.json({ error: 'Failed to create checkout session.' }, { status: 500 })
+  }
+}
