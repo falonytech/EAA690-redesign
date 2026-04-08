@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import SearchForm from '@/components/SearchForm'
 import { useSession, signOut } from '@/lib/better-auth-client'
 import { useIsAdmin, useIsEditor } from '@/lib/auth-utils'
 import Image from 'next/image'
@@ -84,6 +85,7 @@ export default function Navigation() {
   return (
     <nav className="bg-eaa-blue text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Desktop: primary row — logo, links, account only (no search here) */}
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/" className="flex shrink-0 items-center space-x-3">
@@ -100,7 +102,7 @@ export default function Navigation() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex flex-1 justify-center items-center space-x-1">
+          <div className="hidden lg:flex flex-1 justify-center items-center space-x-1 min-w-0 px-2">
             {navigation.map((item) => (
               <div key={item.name} className="relative group">
                 <Link
@@ -128,12 +130,12 @@ export default function Navigation() {
             ))}
           </div>
 
-          {/* Right side actions */}
-          <div className="hidden lg:flex shrink-0 items-center space-x-2">
+          {/* Session (desktop) */}
+          <div className="hidden lg:flex shrink-0 items-center gap-2">
             {isPending ? (
               <div className="px-4 py-2 text-sm font-medium opacity-0">Login</div>
             ) : session ? (
-              <div className="flex items-center space-x-4 min-w-0">
+              <div className="flex items-center space-x-3 min-w-0">
                 <Link
                   href="/members"
                   className="text-sm text-gray-200 min-w-0 max-w-[10rem] xl:max-w-[13rem] truncate hover:text-eaa-yellow transition-colors"
@@ -162,7 +164,7 @@ export default function Navigation() {
                 )}
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 text-sm font-medium hover:text-eaa-yellow transition-colors"
+                  className="px-3 py-2 text-sm font-medium hover:text-eaa-yellow transition-colors"
                 >
                   Logout
                 </button>
@@ -195,9 +197,21 @@ export default function Navigation() {
           </button>
         </div>
 
+        {/* Desktop only: search on its own row so the main bar stays uncluttered */}
+        <div className="hidden lg:block border-t border-white/15 py-2.5">
+          <div className="flex justify-center px-1">
+            <div className="w-full max-w-2xl">
+              <SearchForm compact compactFullWidth />
+            </div>
+          </div>
+        </div>
+
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div id="mobile-menu" className="lg:hidden pb-4">
+          <div id="mobile-menu" className="lg:hidden pb-4 border-t border-white/10 pt-4">
+            <div className="px-1 mb-4 max-w-md">
+              <SearchForm compact />
+            </div>
             <div className="space-y-1">
               {navigation.map((item) => (
                 <div key={item.name}>

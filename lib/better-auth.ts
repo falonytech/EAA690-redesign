@@ -118,6 +118,27 @@ function getSecret(): string {
  */
 let _auth: ReturnType<typeof betterAuth> | null = null
 
+const PRODUCTION_TRUSTED_ORIGINS = [
+  "https://eaa690.org",
+  "https://www.eaa690.org",
+  "https://eaa-960-redesign.vercel.app",
+] as const
+
+function isLanHttpOrigin(origin: string): boolean {
+  try {
+    const u = new URL(origin)
+    if (u.protocol !== "http:" && u.protocol !== "https:") return false
+    if (u.hostname === "localhost" || u.hostname === "127.0.0.1") return true
+    const p = u.hostname.split(".")
+    if (p.length === 4 && p[0] === "192" && p[1] === "168") return true
+    if (p.length === 4 && p[0] === "10") return true
+    if (p.length === 4 && p[0] === "172" && Number(p[1]) >= 16 && Number(p[1]) <= 31) return true
+    return false
+  } catch {
+    return false
+  }
+}
+
 export function getAuth(): NonNullable<typeof _auth> {
   if (!_auth) {
     _auth = betterAuth({
@@ -133,6 +154,19 @@ export function getAuth(): NonNullable<typeof _auth> {
       session: {
         expiresIn: 60 * 60 * 24 * 7,
         updateAge: 60 * 60 * 24,
+      },
+      /**
+       * Default trusted origin is only `new URL(baseURL).origin`. If you open the dev server via a
+       * LAN IP (e.g. http://192.168.1.5:3000) while baseURL is localhost, sign-in POSTs fail CSRF.
+       * In development, allow the request Origin when it looks like a local/private network URL.
+       */
+      trustedOrigins: async (request) => {
+        const extra: string[] = [...PRODUCTION_TRUSTED_ORIGINS]
+        if (process.env.NODE_ENV === "development") {
+          const o = request?.headers.get("origin")
+          if (o && isLanHttpOrigin(o)) extra.push(o)
+        }
+        return extra
       },
     })
   }

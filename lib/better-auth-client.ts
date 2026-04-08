@@ -3,32 +3,34 @@
 import { createAuthClient } from "better-auth/react"
 import { adminClient } from "better-auth/client/plugins"
 
-// Determine the base URL for authentication
-// Priority: current origin (for same-origin requests) > explicit env var > Vercel preview URL > localhost
-function getBaseURL(): string {
-  // For client-side, always use the current origin to avoid CORS issues
-  // This ensures same-origin requests work correctly on all deployments
-  if (typeof window !== 'undefined') {
+/** Must match `basePath` in `lib/better-auth.ts` (server). */
+const AUTH_BASE_PATH = "/api/auth"
+
+/**
+ * Origin only (no path). Client must call `/api/auth/*` on the same origin as the page
+ * (e.g. http://localhost:3000 vs http://192.168.x.x:3000) or Better Auth CSRF checks fail on sign-in.
+ */
+function getAuthOrigin(): string {
+  if (typeof window !== "undefined") {
     return window.location.origin
   }
-  
-  // Server-side rendering fallbacks
-  // If explicitly set, use that (useful for SSR)
-  if (process.env.NEXT_PUBLIC_BETTER_AUTH_URL) {
-    return process.env.NEXT_PUBLIC_BETTER_AUTH_URL
+  const fromEnv = process.env.NEXT_PUBLIC_BETTER_AUTH_URL?.trim()
+  if (fromEnv) {
+    try {
+      return new URL(fromEnv).origin
+    } catch {
+      /* fall through */
+    }
   }
-  
-  // For Vercel deployments, use the deployment URL
   if (process.env.NEXT_PUBLIC_VERCEL_URL) {
     return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
   }
-  
-  // Fallback for local development
   return "http://localhost:3000"
 }
 
 export const authClient = createAuthClient({
-  baseURL: getBaseURL(),
+  baseURL: getAuthOrigin(),
+  basePath: AUTH_BASE_PATH,
   plugins: [adminClient()],
 })
 
