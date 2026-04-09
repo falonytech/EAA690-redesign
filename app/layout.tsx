@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { PT_Serif } from 'next/font/google'
 import './globals.css'
 import SiteChrome from '@/components/SiteChrome'
+import { getSiteSettings } from '@/lib/sanity'
+import { getAnnouncementBar } from '@/lib/site-settings-display'
 
 const ptSerif = PT_Serif({
   subsets: ['latin'],
@@ -19,15 +21,21 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const siteSettings = await getSiteSettings()
+  const announcement = getAnnouncementBar(siteSettings?.siteAnnouncement)
+  const showStore = siteSettings?.storeSectionVisible !== false
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={ptSerif.className} suppressHydrationWarning>
-        <SiteChrome>{children}</SiteChrome>
+        <SiteChrome announcement={announcement} showStore={showStore}>
+          {children}
+        </SiteChrome>
       </body>
     </html>
   )

@@ -219,7 +219,9 @@ export async function getSiteSettings() {
       socialLinks,
       breakfastPrice,
       breakfastTime,
-      newsletterUrl
+      newsletterUrl,
+      siteAnnouncement,
+      storeSectionVisible
     }
   `)
 }

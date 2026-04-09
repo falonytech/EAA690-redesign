@@ -4,13 +4,23 @@ import { usePathname } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import { StoreCartProvider } from '@/components/StoreCartProvider'
+import SiteAnnouncementBar from '@/components/SiteAnnouncementBar'
+import type { AnnouncementBarProps } from '@/lib/site-settings-display'
 
 /**
  * Renders global nav + footer for the public site only. `/studio` embeds Sanity
  * NextStudio full-screen — the site chrome would stack under Studio toolbars and
  * break dropdown z-order; omit it there.
  */
-export default function SiteChrome({ children }: { children: React.ReactNode }) {
+export default function SiteChrome({
+  children,
+  announcement = null,
+  showStore = true,
+}: {
+  children: React.ReactNode
+  announcement?: AnnouncementBarProps | null
+  showStore?: boolean
+}) {
   const pathname = usePathname()
   const isStudio = pathname?.startsWith('/studio') ?? false
 
@@ -30,7 +40,8 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
       >
         Skip to main content
       </a>
-      <Navigation />
+      <Navigation showStore={showStore} />
+      {announcement ? <SiteAnnouncementBar {...announcement} /> : null}
       <main id="main-content" className="min-h-screen">
         {children}
       </main>

@@ -65,7 +65,7 @@ function ShoppingCartNavLink({
   )
 }
 
-export default function Navigation() {
+export default function Navigation({ showStore = true }: { showStore?: boolean }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isChapterOpen, setIsChapterOpen] = useState(false)
   const [isProgramsOpen, setIsProgramsOpen] = useState(false)
@@ -136,7 +136,7 @@ export default function Navigation() {
       ],
     },
     ...(showSessionNavItems ? [{ name: 'Members', href: '/members' }] : []),
-    { name: 'Store', href: '/store' },
+    ...(showStore ? [{ name: 'Store', href: '/store' }] : []),
     { name: 'Contact', href: '/contact' },
   ]
 
@@ -190,10 +190,12 @@ export default function Navigation() {
 
           {/* Cart icon + account (desktop) */}
           <div className="hidden xl:flex shrink-0 items-center gap-3 2xl:gap-5">
-            <ShoppingCartNavLink
-              totalItems={totalItems}
-              className="rounded-md p-2 text-white hover:bg-white/10 hover:text-eaa-yellow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-eaa-yellow focus-visible:ring-offset-2 focus-visible:ring-offset-eaa-blue"
-            />
+            {showStore ? (
+              <ShoppingCartNavLink
+                totalItems={totalItems}
+                className="rounded-md p-2 text-white hover:bg-white/10 hover:text-eaa-yellow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-eaa-yellow focus-visible:ring-offset-2 focus-visible:ring-offset-eaa-blue"
+              />
+            ) : null}
             {isPending ? (
               <div className="px-4 py-2 text-sm font-medium opacity-0">Login</div>
             ) : session ? (
@@ -243,10 +245,12 @@ export default function Navigation() {
 
           {/* Tablet / narrow desktop: cart icon + menu toggle */}
           <div className="flex items-center gap-0.5 xl:hidden ml-auto shrink-0">
-            <ShoppingCartNavLink
-              totalItems={totalItems}
-              className="rounded-md p-2 text-white hover:bg-white/10 hover:text-eaa-yellow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-eaa-yellow focus-visible:ring-offset-2 focus-visible:ring-offset-eaa-blue"
-            />
+            {showStore ? (
+              <ShoppingCartNavLink
+                totalItems={totalItems}
+                className="rounded-md p-2 text-white hover:bg-white/10 hover:text-eaa-yellow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-eaa-yellow focus-visible:ring-offset-2 focus-visible:ring-offset-eaa-blue"
+              />
+            ) : null}
             <button
               type="button"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
