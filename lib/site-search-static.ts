@@ -1,3 +1,6 @@
+import Fuse from 'fuse.js'
+import { MAX_SEARCH_QUERY_LENGTH } from '@/lib/search-safety'
+
 /**
  * Curated index for site-wide search (pages without CMS or as a baseline when Sanity is empty).
  * Keep titles/snippets aligned with on-page copy where possible.
@@ -39,7 +42,8 @@ export const STATIC_SITE_SEARCH_INDEX: StaticSearchEntry[] = [
   { title: 'Members area', href: '/members', snippet: 'Resources for logged-in chapter members.' },
 ]
 
-function normalize(s: string): string {
+/** Normalizes text for substring / token checks (matches CMS ranking in site-search). */
+export function normalizeSearchHaystack(s: string): string {
   return s
     .toLowerCase()
     .replace(/[’']/g, "'")
@@ -48,40 +52,54 @@ function normalize(s: string): string {
     .trim()
 }
 
+let staticFuse: Fuse<StaticSearchEntry> | null = null
+
+function getStaticFuse(): Fuse<StaticSearchEntry> {
+  if (!staticFuse) {
+    staticFuse = new Fuse(STATIC_SITE_SEARCH_INDEX, {
+      keys: [
+        { name: 'title', weight: 0.42 },
+        { name: 'snippet', weight: 0.38 },
+        { name: 'keywords', weight: 0.2, getFn: (e) => e.keywords ?? '' },
+      ],
+      threshold: 0.4,
+      ignoreLocation: true,
+      minMatchCharLength: 2,
+      isCaseSensitive: false,
+      includeScore: true,
+    })
+  }
+  return staticFuse
+}
+
+function prepareFuseQuery(raw: string): string {
+  return normalizeSearchHaystack(raw.trim().slice(0, MAX_SEARCH_QUERY_LENGTH))
+}
+
 /** Tokenize query; drop very short noise tokens. */
 export function searchQueryTokens(raw: string): string[] {
-  const n = normalize(raw)
+  const n = normalizeSearchHaystack(raw)
   if (!n) return []
   return n.split(' ').filter((t) => t.length >= 2).slice(0, 12)
 }
 
 /**
- * Score static entries: every query token must appear in title, snippet, or keywords.
- * Returns entries sorted by number of extra token hits (relevance hint).
+ * Fuzzy search over the static page index (Fuse.js). Complements strict CMS matching.
  */
 export function searchStaticPages(query: string, limit = 25): StaticSearchEntry[] {
-  const tokens = searchQueryTokens(query)
-  if (tokens.length === 0) return []
+  const q = prepareFuseQuery(query)
+  if (q.length < 2) return []
 
-  const scored: { entry: StaticSearchEntry; score: number }[] = []
-
-  for (const entry of STATIC_SITE_SEARCH_INDEX) {
-    const hay = normalize(
-      `${entry.title} ${entry.snippet} ${entry.keywords ?? ''}`,
-    )
-    let ok = true
-    let score = 0
-    for (const t of tokens) {
-      if (!hay.includes(t)) {
-        ok = false
-        break
-      }
-      const inTitle = normalize(entry.title).includes(t)
-      score += inTitle ? 3 : 1
-    }
-    if (ok) scored.push({ entry, score })
+  const fuse = getStaticFuse()
+  const hits = fuse.search(q, { limit: Math.min(80, Math.max(limit * 3, limit)) })
+  const seen = new Set<string>()
+  const out: StaticSearchEntry[] = []
+  for (const h of hits) {
+    const key = h.item.href
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(h.item)
+    if (out.length >= limit) break
   }
-
-  scored.sort((a, b) => b.score - a.score)
-  return scored.slice(0, limit).map((s) => s.entry)
+  return out
 }

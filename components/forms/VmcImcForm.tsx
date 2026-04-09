@@ -20,10 +20,11 @@ export default function VmcImcForm() {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    const form = e.currentTarget
     setStatus('submitting')
     setErrorMsg('')
 
-    const fd = new FormData(e.currentTarget)
+    const fd = new FormData(form)
     const data: Record<string, string> = {}
     fd.forEach((value, key) => { data[key] = value.toString() })
 
@@ -35,7 +36,7 @@ export default function VmcImcForm() {
       })
       if (!res.ok) throw new Error(await res.text())
       setStatus('success')
-      e.currentTarget.reset()
+      form.reset()
       setPhone('')
     } catch (err) {
       console.error(err)

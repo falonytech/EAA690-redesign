@@ -28,10 +28,11 @@ export default function YouthAviationForm() {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    const form = e.currentTarget
     setStatus('submitting')
     setErrorMsg('')
 
-    const fd = new FormData(e.currentTarget)
+    const fd = new FormData(form)
     const interests: string[] = fd.getAll('interest_areas').map(String)
 
     const data: Record<string, unknown> = {}
@@ -48,7 +49,7 @@ export default function YouthAviationForm() {
       })
       if (!res.ok) throw new Error(await res.text())
       setStatus('success')
-      e.currentTarget.reset()
+      form.reset()
       setApplyingFor('myself')
       setContactPhone('')
     } catch (err) {

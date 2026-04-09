@@ -1,6 +1,11 @@
 import { createClient, type SanityClient } from '@sanity/client'
 import { isSafeSiteHref, normalizeSearchQuery } from '@/lib/search-safety'
-import { searchQueryTokens, searchStaticPages, type StaticSearchEntry } from '@/lib/site-search-static'
+import {
+  normalizeSearchHaystack,
+  searchQueryTokens,
+  searchStaticPages,
+  type StaticSearchEntry,
+} from '@/lib/site-search-static'
 
 const SANITY_PROJECT_ID = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID?.trim() || 'itqpjbjj'
 const SANITY_DATASET = process.env.NEXT_PUBLIC_SANITY_DATASET?.trim() || 'production'
@@ -15,6 +20,7 @@ export type SiteSearchHit = {
 }
 
 const MAX_SANITY_TOKENS = 5
+const SANITY_FETCH_LIMIT = 80
 
 function sanityGlob(token: string): string {
   const safe = token.replace(/[*?"[\]]/g, '').slice(0, 64)
@@ -35,23 +41,79 @@ function getSearchClient(): SanityClient | null {
   }
 }
 
-function tokenMatchClause(fields: { path: string; optional?: boolean }[], tokenIndex: number): string {
+/** Single field in a GROQ `match` clause (parameterized; no user-controlled GROQ fragments). */
+type GroqMatchField = {
+  path: string
+  optional?: boolean
+  /** Use for e.g. `pt::text(content)` — check `defined(content)` not `defined(pt::text(...))`. */
+  definedPath?: string
+}
+
+function fieldMatchLine(f: GroqMatchField, tokenIndex: number): string {
   const p = `$p${tokenIndex}`
-  const parts = fields.map((f) => {
-    const base = `${f.path} match ${p}`
-    return f.optional ? `(defined(${f.path}) && ${base})` : base
-  })
+  const base = `${f.path} match ${p}`
+  if (!f.optional) return base
+  const def = f.definedPath ?? f.path
+  return `defined(${def}) && ${base}`
+}
+
+/** One query token matches if any of the fields match (OR). */
+function oneTokenAnyField(fields: GroqMatchField[], tokenIndex: number): string {
+  const parts = fields.map((f) => fieldMatchLine(f, tokenIndex))
   return `(${parts.join(' || ')})`
 }
 
-function buildMultiTokenFilter(
-  type: string,
-  fields: { path: string; optional?: boolean }[],
-  tokenCount: number,
-): string {
-  const groups = Array.from({ length: tokenCount }, (_, i) => tokenMatchClause(fields, i))
-  return `_type == "${type}" && ${groups.join(' && ')}`
+/**
+ * Relaxed filter: document matches if ANY token matches ANY field (good recall).
+ * Results are ranked in TypeScript by how many distinct tokens appear in a normalized haystack.
+ */
+function buildRelaxedTypeFilter(type: string, fields: GroqMatchField[], tokenCount: number): string {
+  const groups = Array.from({ length: tokenCount }, (_, i) => oneTokenAnyField(fields, i))
+  return `_type == "${type}" && (${groups.join(' || ')})`
 }
+
+const F_NEWS: GroqMatchField[] = [
+  { path: 'title' },
+  { path: 'excerpt', optional: true },
+  { path: 'pt::text(content)', optional: true, definedPath: 'content' },
+]
+
+const F_KUDOS: GroqMatchField[] = [
+  { path: 'name' },
+  { path: 'achievement', optional: true },
+  { path: 'excerpt', optional: true },
+  { path: 'pt::text(content)', optional: true, definedPath: 'content' },
+]
+
+const F_EVENT: GroqMatchField[] = [
+  { path: 'title' },
+  { path: 'description', optional: true },
+  { path: 'location', optional: true },
+  { path: 'pt::text(content)', optional: true, definedPath: 'content' },
+]
+
+const F_PRESENTATION: GroqMatchField[] = [
+  { path: 'title' },
+  { path: 'speakerName', optional: true },
+  { path: 'topic', optional: true },
+  { path: 'speakerBio', optional: true },
+]
+
+const F_PAGE: GroqMatchField[] = [
+  { path: 'title' },
+  { path: 'pt::text(content)', optional: true, definedPath: 'content' },
+]
+
+const F_STORE: GroqMatchField[] = [
+  { path: 'title' },
+  { path: 'shortDescription', optional: true },
+]
+
+const F_BOARD: GroqMatchField[] = [
+  { path: 'name' },
+  { path: 'role', optional: true },
+  { path: 'bio', optional: true },
+]
 
 type SanityHitRaw = {
   _type: string
@@ -66,7 +128,39 @@ type SanityHitRaw = {
   role?: string
   bio?: string
   location?: string
+  speakerBio?: string
+  /** Plain text from portable `content` (GROQ projection). */
+  contentText?: string
   slug?: { current?: string }
+}
+
+function rankTextForRow(row: SanityHitRaw): string {
+  return [
+    row.title,
+    row.name,
+    row.excerpt,
+    row.achievement,
+    row.speakerName,
+    row.topic,
+    row.description,
+    row.shortDescription,
+    row.role,
+    row.bio,
+    row.location,
+    row.speakerBio,
+    row.contentText,
+  ]
+    .filter((x): x is string => typeof x === 'string' && x.length > 0)
+    .join(' ')
+}
+
+function countTokenMatches(haystackNorm: string, tokens: string[]): number {
+  let n = 0
+  for (const t of tokens) {
+    if (t.length < 2) continue
+    if (haystackNorm.includes(t)) n++
+  }
+  return n
 }
 
 function mapSanityRow(row: SanityHitRaw): SiteSearchHit | null {
@@ -105,7 +199,10 @@ function mapSanityRow(row: SanityHitRaw): SiteSearchHit | null {
       return {
         title: row.topic || row.title || row.speakerName || 'Presentation',
         href: '/programs',
-        snippet: [row.speakerName, row.topic].filter(Boolean).join(' — ').slice(0, 220) || 'Monthly aviation program',
+        snippet: [row.speakerName, row.topic, row.speakerBio?.slice(0, 120)]
+          .filter(Boolean)
+          .join(' — ')
+          .slice(0, 220) || 'Monthly aviation program',
         source: 'sanity',
         docType: 'presentation',
       }
@@ -142,8 +239,10 @@ function mapSanityRow(row: SanityHitRaw): SiteSearchHit | null {
 }
 
 async function searchSanity(tokens: string[]): Promise<SiteSearchHit[]> {
-  if (tokens.length === 0) return []
-  const tks = tokens.slice(0, MAX_SANITY_TOKENS).map(sanityGlob).filter(Boolean)
+  const rankingTokens = tokens.slice(0, MAX_SANITY_TOKENS)
+  if (rankingTokens.length === 0) return []
+
+  const tks = rankingTokens.map(sanityGlob).filter(Boolean)
   if (tks.length === 0) return []
 
   const client = getSearchClient()
@@ -156,58 +255,51 @@ async function searchSanity(tokens: string[]): Promise<SiteSearchHit[]> {
   const n = tks.length
 
   const filters = [
-    buildMultiTokenFilter('newsArticle', [{ path: 'title' }, { path: 'excerpt', optional: true }], n),
-    buildMultiTokenFilter(
-      'kudos',
-      [{ path: 'name' }, { path: 'achievement', optional: true }, { path: 'excerpt', optional: true }],
-      n,
-    ),
-    buildMultiTokenFilter(
-      'event',
-      [{ path: 'title' }, { path: 'description', optional: true }, { path: 'location', optional: true }],
-      n,
-    ),
-    buildMultiTokenFilter(
-      'presentation',
-      [{ path: 'title' }, { path: 'speakerName', optional: true }, { path: 'topic', optional: true }],
-      n,
-    ),
-    buildMultiTokenFilter('page', [{ path: 'title' }], n),
-    buildMultiTokenFilter(
-      'storeProduct',
-      [{ path: 'title' }, { path: 'shortDescription', optional: true }],
-      n,
-    ),
-    buildMultiTokenFilter('boardMember', [{ path: 'name' }, { path: 'role', optional: true }, { path: 'bio', optional: true }], n),
+    buildRelaxedTypeFilter('newsArticle', F_NEWS, n),
+    buildRelaxedTypeFilter('kudos', F_KUDOS, n),
+    buildRelaxedTypeFilter('event', F_EVENT, n),
+    buildRelaxedTypeFilter('presentation', F_PRESENTATION, n),
+    buildRelaxedTypeFilter('page', F_PAGE, n),
+    buildRelaxedTypeFilter('storeProduct', F_STORE, n),
+    buildRelaxedTypeFilter('boardMember', F_BOARD, n),
   ]
 
-  const groq = `*[${filters.map((f) => `(${f})`).join(' || ')}][0...40]{
+  const groq = `*[${filters.map((f) => `(${f})`).join(' || ')}][0...${SANITY_FETCH_LIMIT}]{
     _type,
     title,
     name,
     excerpt,
     achievement,
     speakerName,
+    speakerBio,
     topic,
     description,
     shortDescription,
     role,
     bio,
     location,
-    slug
+    slug,
+    "contentText": select(defined(content) => pt::text(content), "")
   }`
 
   try {
     const rows = await client.fetch<SanityHitRaw[]>(groq, params)
+    const ranked = [...rows].sort((a, b) => {
+      const ca = countTokenMatches(normalizeSearchHaystack(rankTextForRow(a)), rankingTokens)
+      const cb = countTokenMatches(normalizeSearchHaystack(rankTextForRow(b)), rankingTokens)
+      return cb - ca
+    })
+
     const hits: SiteSearchHit[] = []
     const seenKey = new Set<string>()
-    for (const row of rows) {
+    for (const row of ranked) {
       const mapped = mapSanityRow(row)
       if (!mapped) continue
       const key = `${mapped.docType}:${mapped.href}:${mapped.title}`
       if (seenKey.has(key)) continue
       seenKey.add(key)
       hits.push(mapped)
+      if (hits.length >= 40) break
     }
     return hits
   } catch {
@@ -225,7 +317,7 @@ function staticToHit(e: StaticSearchEntry): SiteSearchHit {
 }
 
 /**
- * Site-wide search: keyword match over curated static routes + Sanity documents (when reachable).
+ * Site-wide search: fuzzy match on curated static routes + Sanity (portable text + ranked CMS hits).
  */
 export async function runSiteSearch(query: string): Promise<SiteSearchHit[]> {
   const q = normalizeSearchQuery(query)

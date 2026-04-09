@@ -1,5 +1,11 @@
 /**
  * OWASP-oriented guards for site search (length limits, internal href allowlist).
+ *
+ * Search pipeline notes:
+ * - Queries are trimmed/capped before GROQ, Fuse, or JSON APIs (mitigates resource abuse / oversized payloads).
+ * - Sanity uses parameterized `match` globs only — no string concatenation of user input into GROQ.
+ * - Fuse.js runs server-side against a fixed static page list bundled in the app, not arbitrary user HTML.
+ * - CMS-derived hrefs are validated with `isSafeSiteHref` before inclusion in results (open redirect / XSS hardening).
  */
 
 /** Max characters accepted for a search query (URL, API, Sanity). */
