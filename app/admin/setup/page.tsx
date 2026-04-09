@@ -20,11 +20,18 @@ export default function AdminSetupPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [checking, setChecking] = useState(true)
 
-  // Redirect away if setup is already complete
+  // Redirect away if setup is already complete (or route disabled in production)
   useEffect(() => {
     fetch('/api/admin/setup')
-      .then((r) => r.json())
+      .then((r) => {
+        if (r.status === 404) {
+          router.replace('/')
+          return null
+        }
+        return r.json()
+      })
       .then((data) => {
+        if (!data) return
         if (data.setupComplete) {
           router.replace('/sign-in')
         } else {

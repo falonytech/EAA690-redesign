@@ -5,6 +5,11 @@ import { getEffectiveDatabaseUrl, isPostgresUrl } from '@/lib/db-resolver'
 import { runSqliteAdminSetup } from '@/lib/admin-setup-sqlite'
 import { Pool } from 'pg'
 
+function adminSetupDisabledInProduction(): NextResponse | null {
+  if (process.env.VERCEL_ENV !== 'production') return null
+  return NextResponse.json({ error: 'Not found' }, { status: 404 })
+}
+
 /**
  * Shared helper: returns true if at least one admin user already exists in the database.
  * Works for both Postgres and SQLite.
@@ -49,6 +54,8 @@ async function adminAlreadyExists(): Promise<boolean> {
  * The setup page calls this on load to redirect away if setup is done.
  */
 export async function GET() {
+  const blocked = adminSetupDisabledInProduction()
+  if (blocked) return blocked
   const setupComplete = await adminAlreadyExists()
   return NextResponse.json({ setupComplete })
 }
@@ -59,6 +66,8 @@ export async function GET() {
  * Blocked once an admin account already exists — subsequent calls return 403.
  */
 export async function POST(request: NextRequest) {
+  const blocked = adminSetupDisabledInProduction()
+  if (blocked) return blocked
   // Refuse if setup has already been completed
   if (await adminAlreadyExists()) {
     return NextResponse.json(

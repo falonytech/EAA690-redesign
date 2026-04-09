@@ -5,10 +5,15 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from '@/lib/better-auth-client'
 
+function safeRedirect(value: string | null): string {
+  if (value && /^\/(?!\/)/.test(value)) return value
+  return '/members'
+}
+
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirect = searchParams?.get('redirect') || '/members'
+  const redirect = safeRedirect(searchParams?.get('redirect'))
   
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -26,13 +31,16 @@ function LoginForm() {
         password,
       })
 
-      if ('error' in result && result.error) {
+      if (result.error) {
         setError((result.error as { message?: string }).message || 'Invalid email or password')
-      } else {
-        // Successful login - redirect to the intended page or members area
-        router.push(redirect)
-        router.refresh()
+        return
       }
+      if (result.data && 'twoFactorRedirect' in result.data && result.data.twoFactorRedirect) {
+        router.push(`/sign-in/two-factor?redirect=${encodeURIComponent(redirect)}`)
+        return
+      }
+      router.push(redirect)
+      router.refresh()
     } catch (err) {
       setError('An error occurred. Please try again.')
       console.error('Login error:', err)

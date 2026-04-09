@@ -29,12 +29,18 @@ function LoginForm() {
 
     try {
       const result = await signIn.email({ email, password })
-      if ('error' in result && result.error) {
+      if (result.error) {
         setError((result.error as { message?: string }).message || 'Invalid email or password')
-      } else {
-        router.push(redirect)
-        router.refresh()
+        return
       }
+      if (result.data && 'twoFactorRedirect' in result.data && result.data.twoFactorRedirect) {
+        router.push(
+          `/sign-in/two-factor?redirect=${encodeURIComponent(redirect)}`
+        )
+        return
+      }
+      router.push(redirect)
+      router.refresh()
     } catch {
       setError('An error occurred. Please try again.')
     } finally {

@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Expose deployment target to the browser for client-side MFA enrollment checks (AuthGuard).
+  env: {
+    NEXT_PUBLIC_VERCEL_ENV: process.env.VERCEL_ENV || '',
+  },
   // Native modules: avoid bundling into serverless chunks.
   serverExternalPackages: ['better-sqlite3', 'pg'],
   images: {
