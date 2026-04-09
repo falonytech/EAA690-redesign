@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, FormEvent, useRef, useEffect } from 'react'
+import UsPhoneInput from '@/components/forms/UsPhoneInput'
 
 const INPUT = 'w-full border border-gray-500 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-eaa-blue focus:border-transparent'
 const LABEL = 'block text-sm font-medium text-gray-700 mb-1'
@@ -10,6 +11,7 @@ const FIELDSET = 'mb-5 border-0 m-0 p-0'
 export default function ScholarshipForm() {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
+  const [phone, setPhone] = useState('')
   const successRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -34,6 +36,7 @@ export default function ScholarshipForm() {
       if (!res.ok) throw new Error(await res.text())
       setStatus('success')
       e.currentTarget.reset()
+      setPhone('')
     } catch (err) {
       console.error(err)
       setErrorMsg('Something went wrong. Please try again or contact us directly.')
@@ -91,7 +94,14 @@ export default function ScholarshipForm() {
 
       <div className={FIELD}>
         <label htmlFor="sch_phone" className={LABEL}>Phone Number <span aria-hidden="true">*</span><span className="sr-only">(required)</span></label>
-        <input id="sch_phone" name="phone" type="tel" required autoComplete="tel" className={INPUT} placeholder="(555) 555-5555" />
+        <UsPhoneInput
+          id="sch_phone"
+          name="phone"
+          required
+          className={INPUT}
+          value={phone}
+          onValueChange={setPhone}
+        />
       </div>
 
       <div className={FIELD}>

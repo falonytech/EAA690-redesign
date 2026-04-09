@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { insertSubmission, FormType } from '@/lib/forms-db'
+import { normalizeUsPhoneForStorage, PROGRAM_FORM_PHONE_FIELDS } from '@/lib/us-phone'
 
 const VALID_FORM_TYPES: FormType[] = ['summer_camp', 'scholarship', 'vmc_imc', 'youth_aviation']
 
@@ -51,8 +52,15 @@ export async function POST(
   }
 
   // Strip the honeypot field before persisting
-  const { website: _hp, ...payload } = data as Record<string, unknown>
+  const { website: _hp, ...rest } = data as Record<string, unknown>
   void _hp
+
+  const payload: Record<string, unknown> = { ...rest }
+  for (const key of PROGRAM_FORM_PHONE_FIELDS) {
+    if (key in payload) {
+      payload[key] = normalizeUsPhoneForStorage(payload[key])
+    }
+  }
 
   try {
     const id = await insertSubmission(type as FormType, payload)

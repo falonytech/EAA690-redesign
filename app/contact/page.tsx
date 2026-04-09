@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { formatUsPhoneInput } from '@/lib/us-phone'
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -19,9 +20,10 @@ export default function ContactPage() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: name === 'phone' ? formatUsPhoneInput(value) : value,
     })
   }
 
@@ -116,8 +118,11 @@ export default function ContactPage() {
               </label>
               <input
                 type="tel"
+                inputMode="numeric"
+                autoComplete="tel"
                 id="phone"
                 name="phone"
+                placeholder="555-555-5555"
                 value={formData.phone}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-eaa-blue focus:border-transparent"

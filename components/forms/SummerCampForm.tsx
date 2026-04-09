@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, FormEvent, useRef, useEffect } from 'react'
+import UsPhoneInput from '@/components/forms/UsPhoneInput'
 
 // W6: border-gray-500 (~4.25:1 on white) meets the 3:1 minimum for UI component boundaries (WCAG 1.4.11)
 const INPUT = 'w-full border border-gray-500 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-eaa-blue focus:border-transparent'
@@ -11,6 +12,8 @@ const FIELDSET = 'mb-5 border-0 m-0 p-0'
 export default function SummerCampForm() {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
+  const [parentPhone, setParentPhone] = useState('')
+  const [emergencyPhone, setEmergencyPhone] = useState('')
   const successRef = useRef<HTMLDivElement>(null)
 
   // W4: Move focus to success message so keyboard/AT users aren't stranded
@@ -38,6 +41,8 @@ export default function SummerCampForm() {
       if (!res.ok) throw new Error(await res.text())
       setStatus('success')
       form.reset()
+      setParentPhone('')
+      setEmergencyPhone('')
     } catch (err) {
       console.error(err)
       setErrorMsg('Something went wrong. Please try again or email us directly.')
@@ -135,7 +140,14 @@ export default function SummerCampForm() {
         </div>
         <div className={FIELD}>
           <label htmlFor="sc_phone" className={LABEL}>Phone Number <span aria-hidden="true">*</span><span className="sr-only">(required)</span></label>
-          <input id="sc_phone" name="parent_phone" type="tel" required autoComplete="tel" className={INPUT} placeholder="(555) 555-5555" />
+          <UsPhoneInput
+            id="sc_phone"
+            name="parent_phone"
+            required
+            className={INPUT}
+            value={parentPhone}
+            onValueChange={setParentPhone}
+          />
         </div>
       </div>
 
@@ -148,7 +160,14 @@ export default function SummerCampForm() {
         </div>
         <div className={FIELD}>
           <label htmlFor="sc_ec_phone" className={LABEL}>Emergency Contact Phone <span aria-hidden="true">*</span><span className="sr-only">(required)</span></label>
-          <input id="sc_ec_phone" name="emergency_contact_phone" type="tel" required className={INPUT} placeholder="(555) 555-5555" />
+          <UsPhoneInput
+            id="sc_ec_phone"
+            name="emergency_contact_phone"
+            required
+            className={INPUT}
+            value={emergencyPhone}
+            onValueChange={setEmergencyPhone}
+          />
         </div>
       </div>
 
