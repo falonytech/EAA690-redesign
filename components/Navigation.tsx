@@ -65,10 +65,28 @@ function ShoppingCartNavLink({
   )
 }
 
+function ChevronDownIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        fillRule="evenodd"
+        d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+        clipRule="evenodd"
+      />
+    </svg>
+  )
+}
+
 export default function Navigation({ showStore = true }: { showStore?: boolean }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isChapterOpen, setIsChapterOpen] = useState(false)
-  const [isProgramsOpen, setIsProgramsOpen] = useState(false)
+  /** Which parent nav group is expanded in the mobile drawer (Chapter, Programs, …). */
+  const [openMobileSection, setOpenMobileSection] = useState<string | null>(null)
   const { data: session, isPending } = useSession()
   const isAdmin = useIsAdmin()
   const isEditor = useIsEditor()
@@ -80,6 +98,10 @@ export default function Navigation({ showStore = true }: { showStore?: boolean }
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    if (!isMenuOpen) setOpenMobileSection(null)
+  }, [isMenuOpen])
   const showSessionNavItems = mounted && !isPending && !!session
 
   const handleLogout = async () => {
@@ -286,33 +308,67 @@ export default function Navigation({ showStore = true }: { showStore?: boolean }
               <SearchForm compact />
             </div>
             <div className="space-y-1">
-              {navigation.map((item) => (
-                <div key={item.name}>
-                  <Link
-                    href={item.href}
-                    className="block px-3 py-2 text-base font-medium hover:bg-eaa-light-blue rounded-md"
-                    onClick={() => {
-                      if (!item.submenu) setIsMenuOpen(false)
-                    }}
-                  >
-                    {item.name}
-                  </Link>
-                  {item.submenu && (
-                    <div className="pl-6 mt-1 space-y-1">
-                      {item.submenu.map((subitem) => (
-                        <Link
-                          key={subitem.name}
-                          href={subitem.href}
-                          className="block px-3 py-2 text-sm hover:bg-eaa-light-blue rounded-md"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          {subitem.name}
-                        </Link>
-                      ))}
+              {navigation.map((item) => {
+                const hasSub = Boolean(item.submenu?.length)
+                const sectionOpen = openMobileSection === item.name
+                const subId = `mobile-nav-sub-${item.name.replace(/\s+/g, '-').toLowerCase()}`
+
+                if (!hasSub) {
+                  return (
+                    <div key={item.name}>
+                      <Link
+                        href={item.href}
+                        className="block px-3 py-2 text-base font-medium hover:bg-eaa-light-blue rounded-md"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {item.name}
+                      </Link>
                     </div>
-                  )}
-                </div>
-              ))}
+                  )
+                }
+
+                return (
+                  <div key={item.name}>
+                    <div className="flex min-h-[2.75rem] items-stretch overflow-hidden rounded-md hover:bg-white/5">
+                      <Link
+                        href={item.href}
+                        className="flex flex-1 items-center px-3 py-2 text-base font-medium hover:bg-eaa-light-blue"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {item.name}
+                      </Link>
+                      <button
+                        type="button"
+                        className="flex shrink-0 items-center justify-center px-3 text-white hover:bg-eaa-light-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-eaa-yellow focus-visible:ring-inset"
+                        aria-expanded={sectionOpen}
+                        aria-controls={subId}
+                        aria-label={`${sectionOpen ? 'Collapse' : 'Expand'} ${item.name} submenu`}
+                        onClick={() =>
+                          setOpenMobileSection((prev) => (prev === item.name ? null : item.name))
+                        }
+                      >
+                        <ChevronDownIcon
+                          className={`h-5 w-5 transition-transform duration-200 ${sectionOpen ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                    </div>
+                    {sectionOpen ? (
+                      <div id={subId} className="mt-1 space-y-1 border-l border-white/20 pl-4 ml-3">
+                        {item.submenu!.map((subitem) => (
+                          <Link
+                            key={subitem.name}
+                            href={subitem.href}
+                            className="block px-3 py-2 text-sm hover:bg-eaa-light-blue rounded-md"
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            {subitem.name}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                )
+              })}
               {isPending ? null : session ? (
                 <div>
                   <Link
