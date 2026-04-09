@@ -234,8 +234,13 @@ function AccountPageInner() {
                 {setupOpen ? '▼' : '▶'} Set up two-factor authentication
               </button>
               <p className="text-sm text-gray-500 mt-1">
-                Use an authenticator app (Google Authenticator, 1Password, etc.). You will receive
-                one-time backup codes — store them safely.
+                You will use a free <strong className="font-medium text-gray-700">authenticator app</strong> on
+                your phone to generate login codes — for example{' '}
+                <strong className="font-medium text-gray-700">Google Authenticator</strong>,{' '}
+                <strong className="font-medium text-gray-700">Microsoft Authenticator</strong>,{' '}
+                <strong className="font-medium text-gray-700">Authy</strong>, or{' '}
+                <strong className="font-medium text-gray-700">1Password</strong>. You will also get one-time
+                backup codes — save those somewhere safe.
               </p>
               {setupOpen && (
                 <form onSubmit={startEnable} className="mt-4 max-w-md space-y-3">
@@ -263,22 +268,41 @@ function AccountPageInner() {
           {totpURI && backupCodes && (
             <div className="border border-eaa-blue/30 rounded-lg p-4 mb-6 bg-blue-50/50">
               <h3 className="text-lg font-semibold text-eaa-blue mb-2">Finish setup</h3>
-              <ol className="list-decimal list-inside text-sm text-gray-700 space-y-2 mb-4">
+              <ol className="list-decimal pl-5 sm:pl-6 text-sm text-gray-700 space-y-4 mb-4 marker:font-semibold">
                 <li>
-                  <a href={totpURI} className="text-eaa-light-blue font-medium underline">
-                    Add this account in your authenticator app
-                  </a>{' '}
-                  (opens otpauth link on supported devices).
+                  <p className="font-semibold text-gray-900">Connect this site in your app.</p>
+                  <p className="mt-2 text-gray-700">
+                    Open the authenticator app you use (or install one — popular options include{' '}
+                    <strong>Google Authenticator</strong>, <strong>Microsoft Authenticator</strong>,{' '}
+                    <strong>Authy</strong>, <strong>OTP Auth</strong>, or <strong>1Password</strong>).
+                  </p>
+                  <p className="mt-2">
+                    <a href={totpURI} className="text-eaa-light-blue font-medium underline">
+                      Tap here on the same phone
+                    </a>{' '}
+                    where the app is installed — it should offer to add &ldquo;EAA Chapter 690&rdquo; for you. If
+                    nothing happens, use the app&rsquo;s &ldquo;Add account&rdquo; or &ldquo;Enter setup key&rdquo;
+                    option and follow its steps (your app&rsquo;s help section can walk you through it).
+                  </p>
                 </li>
                 <li>
-                  Save these backup codes somewhere secure — each works once if you lose your phone:
+                  <span className="font-semibold text-gray-900">Save your backup codes.</span>
+                  <p className="mt-2 text-gray-700">
+                    Print them, store them in a password manager, or keep a paper copy in a safe place. Each code
+                    works once if you lose your phone:
+                  </p>
                   <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1 font-mono text-xs bg-white rounded p-3 border">
                     {backupCodes.map((c) => (
                       <li key={c}>{c}</li>
                     ))}
                   </ul>
                 </li>
-                <li>Enter the 6-digit code to confirm.</li>
+                <li>
+                  <span className="font-semibold text-gray-900">Confirm with a code.</span>
+                  <p className="mt-2 text-gray-700">
+                    In your authenticator app, find the 6-digit code for this account and enter it below.
+                  </p>
+                </li>
               </ol>
               <form onSubmit={completeVerify} className="flex flex-col sm:flex-row gap-2 max-w-md">
                 <input
