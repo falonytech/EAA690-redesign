@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import AuthGuard from '@/components/AuthGuard'
 import { useSession, twoFactor } from '@/lib/better-auth-client'
 import Link from 'next/link'
+import QRCode from 'react-qr-code'
 import { shouldBypass2faForEmail, shouldEnforceMfaEnrollment } from '@/lib/auth-security'
 
 type UserWithMfa = {
@@ -276,13 +277,32 @@ function AccountPageInner() {
                     <strong>Google Authenticator</strong>, <strong>Microsoft Authenticator</strong>,{' '}
                     <strong>Authy</strong>, <strong>OTP Auth</strong>, or <strong>1Password</strong>).
                   </p>
-                  <p className="mt-2">
+                  <p className="mt-3 text-gray-700">
+                    In the app, choose <strong>Add account</strong> or <strong>Scan QR code</strong>, then point your
+                    camera at the square below (this is what apps like <strong>Authy</strong> usually ask for):
+                  </p>
+                  <figure className="mt-4 flex flex-col items-center gap-3">
+                    <div className="rounded-lg bg-white p-4 shadow-sm border border-gray-200">
+                      <QRCode
+                        value={totpURI}
+                        size={200}
+                        level="M"
+                        title="EAA Chapter 690 — scan with your authenticator app"
+                        className="h-auto max-w-full"
+                        aria-label="QR code to scan with your authenticator app"
+                      />
+                    </div>
+                    <figcaption className="text-center text-xs text-gray-600 max-w-md">
+                      Same code works in any compatible app — it encodes this site&rsquo;s account details.
+                    </figcaption>
+                  </figure>
+                  <p className="mt-4 text-gray-700">
+                    <span className="font-medium text-gray-900">On the same phone only:</span>{' '}
                     <a href={totpURI} className="text-eaa-light-blue font-medium underline">
-                      Tap here on the same phone
+                      Tap here to open in your authenticator app
                     </a>{' '}
-                    where the app is installed — it should offer to add &ldquo;EAA Chapter 690&rdquo; for you. If
-                    nothing happens, use the app&rsquo;s &ldquo;Add account&rdquo; or &ldquo;Enter setup key&rdquo;
-                    option and follow its steps (your app&rsquo;s help section can walk you through it).
+                    if your device supports it. If that does nothing, use scan above or your app&rsquo;s{' '}
+                    <strong>Enter setup key</strong> / manual entry (see the app&rsquo;s help if needed).
                   </p>
                 </li>
                 <li>
