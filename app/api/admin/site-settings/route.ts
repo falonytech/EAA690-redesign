@@ -266,14 +266,21 @@ export async function PATCH(request: NextRequest) {
     const exists = await client.fetch<boolean>(`defined(*[_id == $id][0]._id)`, {
       id: SITE_SETTINGS_ID,
     })
+
     if (!exists) {
-      return NextResponse.json(
-        {
-          error:
-            'Site Settings document does not exist yet. Open Sanity Studio once and save Site Settings, or create the singleton.',
-        },
-        { status: 404 }
+      /** First save: create the Site Settings singleton (avoids HTTP 404, which looks like a missing API route). */
+      const createDoc: Record<string, unknown> = {
+        _id: SITE_SETTINGS_ID,
+        _type: 'siteSettings',
+        ...setFields,
+      }
+      if (!newsletterUrl) {
+        delete createDoc.newsletterUrl
+      }
+      await client.create(
+        createDoc as { _id: string; _type: 'siteSettings' } & Record<string, unknown>
       )
+      return NextResponse.json({ ok: true, created: true })
     }
 
     let patch = client.patch(SITE_SETTINGS_ID).set(setFields)
