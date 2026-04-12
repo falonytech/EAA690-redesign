@@ -73,6 +73,8 @@ export interface SiteSettings {
   breakfastPrice?: string
   breakfastTime?: string
   newsletterUrl?: string
+  /** Optional Google Drive (or other) folder for pre-migration PDFs. */
+  newsletterArchiveFolderUrl?: string
   socialLinks?: {
     facebook?: string
     twitter?: string

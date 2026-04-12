@@ -143,6 +143,7 @@ export default function Navigation({ showStore = true }: { showStore?: boolean }
     { name: 'Media', href: '/media' },
     { name: 'Kudos', href: '/kudos' },
     { name: 'News', href: '/news' },
+    { name: 'NAVCOM', href: '/newsletter' },
     {
       name: 'Programs',
       href: '/programs',

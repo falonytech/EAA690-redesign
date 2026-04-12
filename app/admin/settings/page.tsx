@@ -15,6 +15,7 @@ type FormState = {
   breakfastPrice: string
   breakfastTime: string
   newsletterUrl: string
+  newsletterArchiveFolderUrl: string
   socialLinks: {
     facebook: string
     twitter: string
@@ -50,6 +51,7 @@ const emptyForm: FormState = {
   breakfastPrice: '',
   breakfastTime: '',
   newsletterUrl: '',
+  newsletterArchiveFolderUrl: '',
   socialLinks: {
     facebook: '',
     twitter: '',
@@ -97,6 +99,7 @@ function SiteSettingsForm() {
           breakfastPrice: data.settings.breakfastPrice,
           breakfastTime: data.settings.breakfastTime,
           newsletterUrl: data.settings.newsletterUrl,
+          newsletterArchiveFolderUrl: data.settings.newsletterArchiveFolderUrl ?? '',
           socialLinks: { ...emptyForm.socialLinks, ...data.settings.socialLinks },
           siteAnnouncement: {
             ...emptyForm.siteAnnouncement,
@@ -315,7 +318,7 @@ function SiteSettingsForm() {
               </div>
               <div>
                 <label htmlFor="newsletterUrl" className="block text-sm font-medium text-gray-700 mb-1">
-                  Latest newsletter URL
+                  Latest newsletter URL (fallback)
                 </label>
                 <input
                   id="newsletterUrl"
@@ -325,6 +328,28 @@ function SiteSettingsForm() {
                   value={form.newsletterUrl}
                   onChange={(e) => setForm((f) => ({ ...f, newsletterUrl: e.target.value }))}
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Used when no NAVCOM issue is published in the CMS, or as a quick PDF link.
+                </p>
+              </div>
+              <div>
+                <label
+                  htmlFor="newsletterArchiveFolderUrl"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Full PDF archive folder URL
+                </label>
+                <input
+                  id="newsletterArchiveFolderUrl"
+                  type="url"
+                  placeholder="https://drive.google.com/…"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  value={form.newsletterArchiveFolderUrl}
+                  onChange={(e) => setForm((f) => ({ ...f, newsletterArchiveFolderUrl: e.target.value }))}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Optional — e.g. Google Drive folder; shown on the public NAVCOM archive page.
+                </p>
               </div>
             </div>
           </section>

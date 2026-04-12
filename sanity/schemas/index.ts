@@ -1,6 +1,7 @@
 // Schema index - import all schemas here
 import event from './event'
 import newsArticle from './newsArticle'
+import newsletterIssue from './newsletterIssue'
 import presentation from './presentation'
 import boardMember from './boardMember'
 import kudos from './kudos'
@@ -13,6 +14,7 @@ export const schemaTypes = [
   // Documents
   event,
   newsArticle,
+  newsletterIssue,
   presentation,
   boardMember,
   kudos,

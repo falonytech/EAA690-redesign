@@ -104,6 +104,13 @@ const F_PAGE: GroqMatchField[] = [
   { path: 'pt::text(content)', optional: true, definedPath: 'content' },
 ]
 
+const F_NEWSLETTER_ISSUE: GroqMatchField[] = [
+  { path: 'title' },
+  { path: 'volumeLabel', optional: true },
+  { path: 'excerpt', optional: true },
+  { path: 'pt::text(content)', optional: true, definedPath: 'content' },
+]
+
 const F_STORE: GroqMatchField[] = [
   { path: 'title' },
   { path: 'shortDescription', optional: true },
@@ -119,6 +126,7 @@ type SanityHitRaw = {
   _type: string
   title?: string
   name?: string
+  volumeLabel?: string
   excerpt?: string
   achievement?: string
   speakerName?: string
@@ -138,6 +146,7 @@ function rankTextForRow(row: SanityHitRaw): string {
   return [
     row.title,
     row.name,
+    row.volumeLabel,
     row.excerpt,
     row.achievement,
     row.speakerName,
@@ -175,6 +184,15 @@ function mapSanityRow(row: SanityHitRaw): SiteSearchHit | null {
         snippet: row.excerpt?.slice(0, 220) || 'News article',
         source: 'sanity',
         docType: 'newsArticle',
+      }
+    case 'newsletterIssue':
+      if (!row.title || !slug) return null
+      return {
+        title: row.volumeLabel ? `${row.title} (${row.volumeLabel})` : row.title,
+        href: `/newsletter/${slug}`,
+        snippet: row.excerpt?.slice(0, 220) || 'NAVCOM newsletter issue',
+        source: 'sanity',
+        docType: 'newsletterIssue',
       }
     case 'kudos':
       if (!row.name || !slug) return null
@@ -260,6 +278,7 @@ async function searchSanity(tokens: string[]): Promise<SiteSearchHit[]> {
     buildRelaxedTypeFilter('event', F_EVENT, n),
     buildRelaxedTypeFilter('presentation', F_PRESENTATION, n),
     buildRelaxedTypeFilter('page', F_PAGE, n),
+    buildRelaxedTypeFilter('newsletterIssue', F_NEWSLETTER_ISSUE, n),
     buildRelaxedTypeFilter('storeProduct', F_STORE, n),
     buildRelaxedTypeFilter('boardMember', F_BOARD, n),
   ]
@@ -268,6 +287,7 @@ async function searchSanity(tokens: string[]): Promise<SiteSearchHit[]> {
     _type,
     title,
     name,
+    volumeLabel,
     excerpt,
     achievement,
     speakerName,

@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import CookieBanner from '@/components/CookieBanner'
+import LatestNavcomCard from '@/components/newsletter/LatestNavcomCard'
+import { getLatestNewsletterIssue, getSiteSettings } from '@/lib/sanity'
 
-// Update this URL each month when a new newsletter is published to Google Drive.
-const LATEST_NEWSLETTER_URL = 'https://drive.google.com/file/d/1oRU-HD5w5tQOrBfrBBgzzt_hvzhz0oBb/view'
+export const revalidate = 120
 
 const PROGRAMS = [
   {
@@ -49,7 +50,16 @@ const PROGRAMS = [
   },
 ]
 
-export default function Home() {
+export default async function Home() {
+  let latestIssue: Awaited<ReturnType<typeof getLatestNewsletterIssue>> = null
+  try {
+    latestIssue = await getLatestNewsletterIssue()
+  } catch {
+    latestIssue = null
+  }
+  const siteSettings = await getSiteSettings()
+  const fallbackPdfUrl = siteSettings?.newsletterUrl?.trim() || null
+
   return (
     <div className="bg-gradient-to-b from-blue-50 to-white">
       {/* Hero Section */}
@@ -71,18 +81,11 @@ export default function Home() {
               aircraft such as EAA&apos;s B-17 &quot;Aluminum Overcast&quot; and the Ford Tri-Motor.
             </p>
             <p className="text-lg text-gray-700 mb-6">
-              Founded in 1980, the chapter is an <strong>IRS-approved 501(c)(3) non-profit entity</strong>.{' '}
-              <a
-                href={LATEST_NEWSLETTER_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-eaa-light-blue underline hover:text-eaa-blue"
-              >
-                Here&apos;s a link to our latest newsletter for your perusal…
-                {/* W8: Inform AT users that the link opens in a new tab */}
-                <span className="sr-only"> (opens in a new tab)</span>
-              </a>
+              Founded in 1980, the chapter is an <strong>IRS-approved 501(c)(3) non-profit entity</strong>.
             </p>
+            <div className="mb-6">
+              <LatestNavcomCard issue={latestIssue} fallbackPdfUrl={fallbackPdfUrl} />
+            </div>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 href="/donate"

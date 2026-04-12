@@ -85,7 +85,10 @@ export default async function NewsPage() {
         <h2 className="text-xl font-bold text-eaa-blue mb-4">Stay Updated</h2>
         <p className="text-gray-700 mb-4">
           For the latest news and updates, be sure to check our{' '}
-          <a href="/newsletter" className="text-eaa-light-blue hover:underline">newsletter</a> and follow us on social media.
+          <Link href="/newsletter" className="text-eaa-light-blue hover:underline">
+            NAVCOM newsletter
+          </Link>{' '}
+          and follow us on social media.
         </p>
       </div>
     </div>

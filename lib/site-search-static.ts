@@ -20,6 +20,12 @@ export const STATIC_SITE_SEARCH_INDEX: StaticSearchEntry[] = [
   { title: 'Join / Renew', href: '/join', snippet: 'Chapter membership tiers, Young Eagles, and recurring support options.' },
   { title: 'Store', href: '/store', snippet: 'Memberships, pancake breakfast tickets, plaques, prints, and chapter merchandise.' },
   { title: 'News', href: '/news', snippet: 'Chapter announcements, breakfast updates, and Gold Chapter news.' },
+  {
+    title: 'NAVCOM newsletter',
+    href: '/newsletter',
+    snippet: 'Monthly NAVCOM newsletter archive, PDFs, and chapter communication.',
+    keywords: 'navcom newsletter pdf archive',
+  },
   { title: 'Media', href: '/media', snippet: 'Photos, videos, and media from chapter events and programs.' },
   { title: 'Kudos', href: '/kudos', snippet: 'Celebrating members’ achievements in aviation and the community.' },
   { title: 'Chapter overview', href: '/chapter', snippet: 'Chapter information, leadership, and quick links to chapter pages.' },

@@ -56,6 +56,7 @@ type SiteSettingsPayload = {
   breakfastPrice?: string
   breakfastTime?: string
   newsletterUrl?: string
+  newsletterArchiveFolderUrl?: string
   socialLinks?: SocialLinks
   siteAnnouncement?: {
     enabled?: boolean
@@ -146,6 +147,7 @@ export async function GET(request: NextRequest) {
         breakfastPrice,
         breakfastTime,
         newsletterUrl,
+        newsletterArchiveFolderUrl,
         siteAnnouncement,
         storeSectionVisible,
         programForms
@@ -176,6 +178,7 @@ export async function GET(request: NextRequest) {
             breakfastPrice: doc.breakfastPrice ?? '',
             breakfastTime: doc.breakfastTime ?? '',
             newsletterUrl: doc.newsletterUrl ?? '',
+            newsletterArchiveFolderUrl: doc.newsletterArchiveFolderUrl ?? '',
             socialLinks: {
               facebook: doc.socialLinks?.facebook ?? '',
               twitter: doc.socialLinks?.twitter ?? '',
@@ -238,6 +241,7 @@ export async function PATCH(request: NextRequest) {
   if (yt) socialLinks.youtube = yt
 
   const newsletterUrl = trimUrl(b.newsletterUrl)
+  const newsletterArchiveFolderUrl = trimUrl(b.newsletterArchiveFolderUrl)
   const siteAnnouncement = buildSiteAnnouncementForPatch(b.siteAnnouncement)
   const sa = b.siteAnnouncement as Record<string, unknown> | undefined
 
@@ -260,6 +264,9 @@ export async function PATCH(request: NextRequest) {
   if (newsletterUrl) {
     setFields.newsletterUrl = newsletterUrl
   }
+  if (newsletterArchiveFolderUrl) {
+    setFields.newsletterArchiveFolderUrl = newsletterArchiveFolderUrl
+  }
 
   try {
     const client = getSanityWriteClient()
@@ -277,6 +284,9 @@ export async function PATCH(request: NextRequest) {
       if (!newsletterUrl) {
         delete createDoc.newsletterUrl
       }
+      if (!newsletterArchiveFolderUrl) {
+        delete createDoc.newsletterArchiveFolderUrl
+      }
       await client.create(
         createDoc as { _id: string; _type: 'siteSettings' } & Record<string, unknown>
       )
@@ -286,6 +296,9 @@ export async function PATCH(request: NextRequest) {
     let patch = client.patch(SITE_SETTINGS_ID).set(setFields)
     if (!newsletterUrl) {
       patch = patch.unset(['newsletterUrl'])
+    }
+    if (!newsletterArchiveFolderUrl) {
+      patch = patch.unset(['newsletterArchiveFolderUrl'])
     }
     if (sa && !trimUrl(sa.linkUrl)) {
       patch = patch.unset(['siteAnnouncement.linkUrl'])

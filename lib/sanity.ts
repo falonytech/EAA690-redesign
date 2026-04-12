@@ -220,9 +220,108 @@ export async function getSiteSettings() {
       breakfastPrice,
       breakfastTime,
       newsletterUrl,
+      newsletterArchiveFolderUrl,
       siteAnnouncement,
       storeSectionVisible,
       programForms
+    }
+  `)
+}
+
+const newsletterIssuePdfProjection = `
+  pdf {
+    asset->{
+      url,
+      originalFilename
+    }
+  },
+  pdfUrl
+`
+
+/** All NAVCOM issues (newest first), for archive pages. */
+export async function getNewsletterIssues() {
+  const freshClient = createClient({
+    projectId: SANITY_PROJECT_ID,
+    dataset: SANITY_DATASET,
+    apiVersion: '2024-01-01',
+    useCdn: false,
+  })
+  return freshClient.fetch(`
+    *[_type == "newsletterIssue"] | order(issueDate desc) {
+      _id,
+      title,
+      slug,
+      issueDate,
+      volumeLabel,
+      excerpt,
+      coverImage,
+      ${newsletterIssuePdfProjection}
+    }
+  `)
+}
+
+/** Latest issue for home hero and “current” links. */
+export async function getLatestNewsletterIssue() {
+  const freshClient = createClient({
+    projectId: SANITY_PROJECT_ID,
+    dataset: SANITY_DATASET,
+    apiVersion: '2024-01-01',
+    useCdn: false,
+  })
+  return freshClient.fetch(
+    `
+    *[_type == "newsletterIssue"] | order(issueDate desc) [0] {
+      _id,
+      title,
+      slug,
+      issueDate,
+      volumeLabel,
+      excerpt,
+      coverImage,
+      content,
+      seoTitle,
+      seoDescription,
+      ${newsletterIssuePdfProjection}
+    }
+  `
+  )
+}
+
+/** Single issue by slug (detail page). */
+export async function getNewsletterIssueBySlug(slug: string) {
+  const freshClient = createClient({
+    projectId: SANITY_PROJECT_ID,
+    dataset: SANITY_DATASET,
+    apiVersion: '2024-01-01',
+    useCdn: false,
+  })
+  return freshClient.fetch(
+    `
+    *[_type == "newsletterIssue" && slug.current == $slug][0] {
+      _id,
+      title,
+      slug,
+      issueDate,
+      volumeLabel,
+      excerpt,
+      coverImage,
+      content,
+      seoTitle,
+      seoDescription,
+      ${newsletterIssuePdfProjection}
+    }
+  `,
+    { slug }
+  )
+}
+
+/** Slugs for static generation. */
+export async function getNewsletterIssueSlugs() {
+  const client = getSanityClient()
+  if (!client) return []
+  return client.fetch<Array<{ slug: string }>>(`
+    *[_type == "newsletterIssue" && defined(slug.current)] {
+      "slug": slug.current
     }
   `)
 }

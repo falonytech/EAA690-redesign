@@ -37,6 +37,7 @@ export default defineConfig({
             // Regular document types
             S.documentTypeListItem('event').title('Events'),
             S.documentTypeListItem('newsArticle').title('News Articles'),
+            S.documentTypeListItem('newsletterIssue').title('NAVCOM Issues'),
             S.documentTypeListItem('presentation').title('Presentations'),
             S.documentTypeListItem('boardMember').title('Board Members'),
             S.documentTypeListItem('page').title('Pages'),

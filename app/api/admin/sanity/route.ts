@@ -19,6 +19,7 @@ function getSanityWriteClient() {
 
 const TYPE_LABELS: Record<string, string> = {
   newsArticle:  'News Article',
+  newsletterIssue: 'NAVCOM Issue',
   event:        'Event',
   presentation: 'Presentation',
   boardMember:  'Board Member',

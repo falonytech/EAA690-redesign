@@ -52,7 +52,15 @@ export default {
       name: 'newsletterUrl',
       title: 'Latest Newsletter URL',
       type: 'url',
-      description: 'Link to the latest newsletter PDF',
+      description:
+        'Fallback link to the latest PDF when no NAVCOM issue is published in the CMS, or for quick redirects.',
+    },
+    {
+      name: 'newsletterArchiveFolderUrl',
+      title: 'Full PDF archive (external folder)',
+      type: 'url',
+      description:
+        'Optional — e.g. Google Drive folder with older PDFs. Shown on the NAVCOM archive page when set.',
     },
     {
       name: 'socialLinks',
