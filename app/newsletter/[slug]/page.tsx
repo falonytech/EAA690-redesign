@@ -99,6 +99,7 @@ export default async function NewsletterIssuePage({ params }: { params: { slug: 
       <Link
         href="/newsletter"
         className="inline-flex items-center gap-1 text-sm text-eaa-light-blue hover:text-eaa-blue font-semibold mb-8 transition-colors"
+        aria-label="Back to NAVCOM newsletter archive"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -124,9 +125,9 @@ export default async function NewsletterIssuePage({ params }: { params: { slug: 
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center rounded-full bg-eaa-blue text-white px-6 py-2.5 text-sm font-bold hover:bg-eaa-light-blue transition-colors"
+            aria-label={`Download PDF for ${issue.title} (opens in a new tab)`}
           >
             Download PDF
-            <span className="sr-only"> (opens in a new tab)</span>
           </a>
         </div>
       ) : null}

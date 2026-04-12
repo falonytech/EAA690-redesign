@@ -60,7 +60,7 @@ export default async function NewsletterArchivePage({ searchParams }: Props) {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <nav className="text-sm text-eaa-light-blue mb-6">
+      <nav className="text-sm text-eaa-light-blue mb-6" aria-label="Breadcrumb">
         <Link href="/" className="hover:underline">
           Home
         </Link>
@@ -98,10 +98,17 @@ export default async function NewsletterArchivePage({ searchParams }: Props) {
       ) : null}
 
       {years.length > 0 ? (
-        <div className="mb-8 flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium text-gray-600 mr-1">Filter by year:</span>
+        <div
+          className="mb-8 flex flex-wrap items-center gap-2"
+          role="group"
+          aria-labelledby="newsletter-year-filter-label"
+        >
+          <span id="newsletter-year-filter-label" className="text-sm font-medium text-gray-600 mr-1">
+            Filter by year:
+          </span>
           <Link
             href="/newsletter"
+            aria-current={selectedYear === null ? 'page' : undefined}
             className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
               selectedYear === null ? 'bg-eaa-blue text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
@@ -112,6 +119,7 @@ export default async function NewsletterArchivePage({ searchParams }: Props) {
             <Link
               key={y}
               href={`/newsletter?year=${y}`}
+              aria-current={selectedYear === y ? 'page' : undefined}
               className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
                 selectedYear === y ? 'bg-eaa-blue text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
@@ -174,9 +182,9 @@ export default async function NewsletterArchivePage({ searchParams }: Props) {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-sm font-semibold text-gray-600 hover:text-eaa-blue"
+                          aria-label={`Download PDF for ${issue.title} (opens in a new tab)`}
                         >
                           PDF
-                          <span className="sr-only"> (opens in a new tab)</span>
                         </a>
                       ) : null}
                     </div>

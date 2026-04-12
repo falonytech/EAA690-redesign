@@ -34,9 +34,14 @@ export default function LatestNavcomCard({
     : null
 
   return (
-    <div className="rounded-2xl border-2 border-eaa-blue/20 bg-white shadow-md overflow-hidden">
+    <section
+      className="rounded-2xl border-2 border-eaa-blue/20 bg-white shadow-md overflow-hidden"
+      aria-label="Latest NAVCOM newsletter issue"
+    >
       <div className="bg-eaa-blue px-4 py-2">
-        <p className="text-sm font-bold uppercase tracking-wide text-eaa-yellow">NAVCOM — latest issue</p>
+        <p className="text-sm font-bold uppercase tracking-wide text-eaa-yellow">
+          NAVCOM — latest issue
+        </p>
       </div>
       <div className="p-5 sm:p-6">
         {issue && slug ? (
@@ -57,7 +62,9 @@ export default function LatestNavcomCard({
                 {formatNewsletterIssueDate(issue.issueDate)}
                 {issue.volumeLabel ? ` · ${issue.volumeLabel}` : ''}
               </p>
-              <h2 className="text-xl font-bold text-eaa-blue mb-2 leading-snug">{issue.title}</h2>
+              <h2 className="text-xl font-bold text-eaa-blue mb-2 leading-snug">
+                {issue.title}
+              </h2>
               {issue.excerpt ? (
                 <p className="text-gray-700 text-sm leading-relaxed mb-4 line-clamp-3">{issue.excerpt}</p>
               ) : null}
@@ -74,9 +81,9 @@ export default function LatestNavcomCard({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center justify-center rounded-full border-2 border-eaa-blue text-eaa-blue px-5 py-2 text-sm font-semibold hover:bg-blue-50 transition-colors"
+                    aria-label={`Download PDF for ${issue.title} (opens in a new tab)`}
                   >
                     Download PDF
-                    <span className="sr-only"> (opens in a new tab)</span>
                   </a>
                 ) : null}
               </div>
@@ -94,9 +101,9 @@ export default function LatestNavcomCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center rounded-full bg-eaa-blue text-white px-5 py-2 text-sm font-semibold hover:bg-eaa-light-blue transition-colors"
+                aria-label="Open latest newsletter PDF (opens in a new tab)"
               >
                 Open latest PDF
-                <span className="sr-only"> (opens in a new tab)</span>
               </a>
               <Link
                 href="/newsletter"
@@ -121,6 +128,6 @@ export default function LatestNavcomCard({
           </div>
         )}
       </div>
-    </div>
+    </section>
   )
 }
