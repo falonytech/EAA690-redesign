@@ -38,3 +38,32 @@ export function isSafeSiteHref(href: string): boolean {
   if (/[\0\r\n<>"`]/.test(h)) return false
   return true
 }
+
+/**
+ * Href values from Sanity Portable Text link annotations (not validated by Studio by default).
+ * Allows same-site paths via {@link isSafeSiteHref} or absolute http(s) URLs; blocks
+ * `javascript:`, `data:`, protocol-relative `//`, and other schemes (OWASP DOM XSS / open redirect).
+ */
+export function safePortableTextLinkHref(href: string | undefined | null): string | null {
+  if (href == null || typeof href !== 'string') return null
+  const h = href.trim()
+  if (!h) return null
+  const lower = h.toLowerCase()
+  if (
+    lower.startsWith('javascript:') ||
+    lower.startsWith('data:') ||
+    lower.startsWith('vbscript:')
+  ) {
+    return null
+  }
+  if (h.startsWith('/') && !h.startsWith('//')) {
+    return isSafeSiteHref(h) ? h : null
+  }
+  try {
+    const u = new URL(h)
+    if (u.protocol === 'http:' || u.protocol === 'https:') return u.toString()
+  } catch {
+    return null
+  }
+  return null
+}

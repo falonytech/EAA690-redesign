@@ -104,6 +104,18 @@ const F_PAGE: GroqMatchField[] = [
   { path: 'pt::text(content)', optional: true, definedPath: 'content' },
 ]
 
+const F_HOME: GroqMatchField[] = [
+  { path: 'heroHeadline' },
+  { path: 'programsSectionTitle', optional: true },
+  { path: 'programsSectionSubtitle', optional: true },
+  { path: 'pancakeTitle', optional: true },
+  { path: 'pancakeIntro', optional: true },
+  { path: 'spotlightTitle', optional: true },
+  { path: 'spotlightSubtitle', optional: true },
+  { path: 'pt::text(heroIntro)', optional: true, definedPath: 'heroIntro' },
+  { path: 'pt::text(spotlightBody)', optional: true, definedPath: 'spotlightBody' },
+]
+
 const F_NEWSLETTER_ISSUE: GroqMatchField[] = [
   { path: 'title' },
   { path: 'volumeLabel', optional: true },
@@ -125,6 +137,13 @@ const F_BOARD: GroqMatchField[] = [
 type SanityHitRaw = {
   _type: string
   title?: string
+  heroHeadline?: string
+  programsSectionTitle?: string
+  programsSectionSubtitle?: string
+  pancakeTitle?: string
+  pancakeIntro?: string
+  spotlightTitle?: string
+  spotlightSubtitle?: string
   name?: string
   volumeLabel?: string
   excerpt?: string
@@ -145,6 +164,13 @@ type SanityHitRaw = {
 function rankTextForRow(row: SanityHitRaw): string {
   return [
     row.title,
+    row.heroHeadline,
+    row.programsSectionTitle,
+    row.programsSectionSubtitle,
+    row.pancakeTitle,
+    row.pancakeIntro,
+    row.spotlightTitle,
+    row.spotlightSubtitle,
     row.name,
     row.volumeLabel,
     row.excerpt,
@@ -233,6 +259,18 @@ function mapSanityRow(row: SanityHitRaw): SiteSearchHit | null {
         source: 'sanity',
         docType: 'page',
       }
+    case 'homePage':
+      if (!row.heroHeadline) return null
+      return {
+        title: 'Home',
+        href: '/',
+        snippet:
+          row.programsSectionSubtitle?.slice(0, 220) ||
+          row.heroHeadline.slice(0, 220) ||
+          'EAA Chapter 690 home page',
+        source: 'sanity',
+        docType: 'homePage',
+      }
     case 'storeProduct':
       if (!row.title) return null
       return {
@@ -278,6 +316,7 @@ async function searchSanity(tokens: string[]): Promise<SiteSearchHit[]> {
     buildRelaxedTypeFilter('event', F_EVENT, n),
     buildRelaxedTypeFilter('presentation', F_PRESENTATION, n),
     buildRelaxedTypeFilter('page', F_PAGE, n),
+    buildRelaxedTypeFilter('homePage', F_HOME, n),
     buildRelaxedTypeFilter('newsletterIssue', F_NEWSLETTER_ISSUE, n),
     buildRelaxedTypeFilter('storeProduct', F_STORE, n),
     buildRelaxedTypeFilter('boardMember', F_BOARD, n),
@@ -286,6 +325,13 @@ async function searchSanity(tokens: string[]): Promise<SiteSearchHit[]> {
   const groq = `*[${filters.map((f) => `(${f})`).join(' || ')}][0...${SANITY_FETCH_LIMIT}]{
     _type,
     title,
+    heroHeadline,
+    programsSectionTitle,
+    programsSectionSubtitle,
+    pancakeTitle,
+    pancakeIntro,
+    spotlightTitle,
+    spotlightSubtitle,
     name,
     volumeLabel,
     excerpt,

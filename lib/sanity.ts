@@ -204,6 +204,45 @@ export async function getPageBySlug(slug: string) {
   )
 }
 
+/** Singleton home page content (Studio → Home Page). */
+export async function getHomePage() {
+  const client = getSanityClient()
+  if (!client) return null
+  return client.fetch(`
+    *[_type == "homePage" && _id == "homePage"][0] {
+      _id,
+      heroHeadline,
+      heroIntro,
+      heroVisual,
+      heroImage,
+      heroImageAlt,
+      goldBadgeCode,
+      programsSectionTitle,
+      programsSectionSubtitle,
+      programCards[] {
+        icon,
+        name,
+        description,
+        href,
+        cta
+      },
+      pancakeSectionEnabled,
+      pancakeTitle,
+      pancakeIntro,
+      pancakeBreakfastTime,
+      pancakeProgramTime,
+      pancakePriceNote,
+      spotlightEnabled,
+      spotlightTitle,
+      spotlightSubtitle,
+      spotlightImage,
+      spotlightImageAlt,
+      spotlightBody,
+      seo
+    }
+  `)
+}
+
 // Fetch site settings (logo, contact info, social links, etc.)
 export async function getSiteSettings() {
   const client = getSanityClient()

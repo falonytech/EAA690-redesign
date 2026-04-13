@@ -34,14 +34,11 @@ export default function LatestNavcomCard({
     : null
 
   return (
-    <section
-      className="rounded-2xl border-2 border-eaa-blue/20 bg-white shadow-md overflow-hidden"
-      aria-label="Latest NAVCOM newsletter issue"
-    >
+    <section className="rounded-2xl border-2 border-eaa-blue/20 bg-white shadow-md overflow-hidden">
       <div className="bg-eaa-blue px-4 py-2">
-        <p className="text-sm font-bold uppercase tracking-wide text-eaa-yellow">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-eaa-yellow">
           NAVCOM — latest issue
-        </p>
+        </h2>
       </div>
       <div className="p-5 sm:p-6">
         {issue && slug ? (
@@ -62,9 +59,9 @@ export default function LatestNavcomCard({
                 {formatNewsletterIssueDate(issue.issueDate)}
                 {issue.volumeLabel ? ` · ${issue.volumeLabel}` : ''}
               </p>
-              <h2 className="text-xl font-bold text-eaa-blue mb-2 leading-snug">
+              <h3 className="text-xl font-bold text-eaa-blue mb-2 leading-snug">
                 {issue.title}
-              </h2>
+              </h3>
               {issue.excerpt ? (
                 <p className="text-gray-700 text-sm leading-relaxed mb-4 line-clamp-3">{issue.excerpt}</p>
               ) : null}

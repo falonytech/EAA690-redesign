@@ -22,6 +22,28 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: inherit;
   }
+
+  /**
+   * WCAG 2.4.7 Focus Visible — keyboard users get a clear focus ring on interactive controls.
+   * Skips hidden inputs and negative tabindex.
+   */
+  :where(
+      a,
+      button,
+      input:not([type='hidden']),
+      textarea,
+      select,
+      summary,
+      [role='button'],
+      [tabindex]:not([tabindex='-1'])
+    ):focus-visible {
+    outline: 2px solid #0052a3;
+    outline-offset: 3px;
+  }
+
+  :where(a, button, [role='button']):focus:not(:focus-visible) {
+    outline: none;
+  }
 }
 
 @layer utilities {

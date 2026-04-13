@@ -33,6 +33,10 @@ export default defineConfig({
                   .schemaType('siteSettings')
                   .documentId('siteSettings')
               ),
+            S.listItem()
+              .title('Home Page')
+              .id('homePage')
+              .child(S.document().schemaType('homePage').documentId('homePage')),
             S.divider(),
             // Regular document types
             S.documentTypeListItem('event').title('Events'),

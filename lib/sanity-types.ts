@@ -94,6 +94,46 @@ export interface Page {
   }
 }
 
+export interface HomeProgramCard {
+  icon?: string
+  name?: string
+  description?: string
+  href?: string
+  cta?: string
+}
+
+/** Singleton `homePage` — see sanity/schemas/homePage.ts */
+export interface HomePageContent {
+  _id?: string
+  heroHeadline?: string
+  heroIntro?: unknown[]
+  heroVisual?: 'goldBadge' | 'heroImage'
+  heroImage?: SanityImage
+  /** Screen reader label for hero photo (when heroVisual is heroImage). */
+  heroImageAlt?: string
+  goldBadgeCode?: string
+  programsSectionTitle?: string
+  programsSectionSubtitle?: string
+  programCards?: HomeProgramCard[]
+  pancakeSectionEnabled?: boolean
+  pancakeTitle?: string
+  pancakeIntro?: string
+  pancakeBreakfastTime?: string
+  pancakeProgramTime?: string
+  pancakePriceNote?: string
+  spotlightEnabled?: boolean
+  spotlightTitle?: string
+  spotlightSubtitle?: string
+  spotlightImage?: SanityImage
+  /** Preferred alt for spotlight photo; headings used as fallback in UI. */
+  spotlightImageAlt?: string
+  spotlightBody?: unknown[]
+  seo?: {
+    metaTitle?: string
+    metaDescription?: string
+  }
+}
+
 export interface StoreCategory {
   _id: string
   title: string
