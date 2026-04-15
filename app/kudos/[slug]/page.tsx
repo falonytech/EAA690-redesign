@@ -55,11 +55,12 @@ const portableTextComponents = {
   },
 }
 
-export default async function KudosDetailPage({ params }: { params: { slug: string } }) {
+export default async function KudosDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
   let kudo: any = null
 
   try {
-    kudo = await getKudosBySlug(params.slug)
+    kudo = await getKudosBySlug(slug)
   } catch {
     notFound()
   }

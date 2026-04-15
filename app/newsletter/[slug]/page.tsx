@@ -56,8 +56,8 @@ const portableTextComponents = {
   },
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const { slug } = params
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
   let issue: {
     title?: string
     seoTitle?: string
@@ -78,8 +78,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 }
 
-export default async function NewsletterIssuePage({ params }: { params: { slug: string } }) {
-  const { slug } = params
+export default async function NewsletterIssuePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
   let issue: any = null
   try {
     issue = await getNewsletterIssueBySlug(slug)

@@ -87,8 +87,8 @@ function formatDate(dateString: string): string {
   })
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const { slug } = params
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
   let article: { title?: string; excerpt?: string } | null = null
   try {
     article = await getNewsArticleBySlug(slug)
@@ -104,8 +104,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 }
 
-export default async function NewsArticlePage({ params }: { params: { slug: string } }) {
-  const { slug } = params
+export default async function NewsArticlePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
   let article: Awaited<ReturnType<typeof getNewsArticleBySlug>> = null
   try {
     article = await getNewsArticleBySlug(slug)
