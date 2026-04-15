@@ -131,10 +131,15 @@ export async function getNewsArticles(limit?: number) {
 }
 
 // Fetch a single news article by slug
+/** Uses API directly (no CDN) so new publishes resolve immediately on Vercel; matches {@link getNewsletterIssueBySlug}. */
 export async function getNewsArticleBySlug(slug: string) {
-  const client = getSanityClient()
-  if (!client) return null
-  return client.fetch(
+  const freshClient = createClient({
+    projectId: SANITY_PROJECT_ID,
+    dataset: SANITY_DATASET,
+    apiVersion: '2024-01-01',
+    useCdn: false,
+  })
+  return freshClient.fetch(
     `
     *[_type == "newsArticle" && slug.current == $slug][0] {
       _id,
@@ -151,11 +156,15 @@ export async function getNewsArticleBySlug(slug: string) {
   )
 }
 
-/** Slugs for news article static generation. */
+/** Slugs for static generation (no CDN so build sees all published slugs). */
 export async function getNewsArticleSlugs() {
-  const client = getSanityClient()
-  if (!client) return []
-  return client.fetch<Array<{ slug: string }>>(`
+  const freshClient = createClient({
+    projectId: SANITY_PROJECT_ID,
+    dataset: SANITY_DATASET,
+    apiVersion: '2024-01-01',
+    useCdn: false,
+  })
+  return freshClient.fetch<Array<{ slug: string }>>(`
     *[_type == "newsArticle" && defined(slug.current)] {
       "slug": slug.current
     }
