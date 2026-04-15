@@ -2,6 +2,9 @@ import { getNewsArticles } from '@/lib/sanity'
 import type { NewsArticle } from '@/lib/sanity-types'
 import Link from 'next/link'
 
+/** Dynamic: avoid stale listing after CMS publishes (ISR was caching HTML for minutes). */
+export const revalidate = 0
+
 // Fallback data when Sanity isn't configured
 const fallbackNews: NewsArticle[] = [
   {

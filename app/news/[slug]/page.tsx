@@ -7,7 +7,8 @@ import { PortableText } from '@portabletext/react'
 import { getNewsArticleBySlug, getNewsArticleSlugs, urlFor } from '@/lib/sanity'
 import { safePortableTextLinkHref } from '@/lib/search-safety'
 
-export const revalidate = 120
+/** No ISR cache: editors expect Sanity edits to show without waiting (see /news/page.tsx). */
+export const revalidate = 0
 
 export async function generateStaticParams() {
   try {

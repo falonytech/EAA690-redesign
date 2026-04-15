@@ -113,11 +113,16 @@ export async function getEventBySlug(slug: string) {
 }
 
 // Fetch all news articles (sorted by date, newest first)
+/** useCdn:false so listing reflects edits immediately; matches {@link getNewsArticleBySlug}. */
 export async function getNewsArticles(limit?: number) {
-  const client = getSanityClient()
-  if (!client) return []
+  const freshClient = createClient({
+    projectId: SANITY_PROJECT_ID,
+    dataset: SANITY_DATASET,
+    apiVersion: '2024-01-01',
+    useCdn: false,
+  })
   const limitClause = limit ? `[0...${limit}]` : ''
-  return client.fetch(`
+  return freshClient.fetch(`
     *[_type == "newsArticle"] | order(publishedAt desc) ${limitClause} {
       _id,
       title,
