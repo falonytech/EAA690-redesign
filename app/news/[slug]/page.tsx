@@ -65,13 +65,21 @@ const portableTextComponents = {
       }
       if (safe.startsWith('http://') || safe.startsWith('https://')) {
         return (
-          <a href={safe} className="text-eaa-blue underline" target="_blank" rel="noopener noreferrer">
+          <a
+            href={safe}
+            className="text-eaa-blue underline rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-eaa-blue focus-visible:ring-offset-2"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             {children}
           </a>
         )
       }
       return (
-        <Link href={safe} className="text-eaa-blue underline">
+        <Link
+          href={safe}
+          className="text-eaa-blue underline rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-eaa-blue focus-visible:ring-offset-2"
+        >
           {children}
         </Link>
       )

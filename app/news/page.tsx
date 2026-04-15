@@ -61,16 +61,19 @@ export default async function NewsPage() {
         {newsItems.map((item) => (
           <article key={item._id} className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-gray-500">
+              <time className="text-sm text-gray-500" dateTime={item.publishedAt}>
                 {formatDate(item.publishedAt)}
-              </span>
+              </time>
               {item.author && (
                 <span className="text-sm text-gray-500">By {item.author}</span>
               )}
             </div>
             <h2 className="text-2xl font-bold text-eaa-blue mb-3">
               {item.slug?.current ? (
-                <Link href={`/news/${item.slug.current}`} className="hover:underline">
+                <Link
+                  href={`/news/${item.slug.current}`}
+                  className="hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-eaa-blue focus-visible:ring-offset-2 rounded"
+                >
                   {item.title}
                 </Link>
               ) : (
@@ -88,7 +91,10 @@ export default async function NewsPage() {
         <h2 className="text-xl font-bold text-eaa-blue mb-4">Stay Updated</h2>
         <p className="text-gray-700 mb-4">
           For the latest news and updates, be sure to check our{' '}
-          <Link href="/newsletter" className="text-eaa-light-blue hover:underline">
+          <Link
+            href="/newsletter"
+            className="text-eaa-light-blue hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-eaa-blue focus-visible:ring-offset-2 rounded"
+          >
             NAVCOM newsletter
           </Link>{' '}
           and follow us on social media.
