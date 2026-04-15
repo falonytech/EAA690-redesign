@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import type { ReactNode } from 'react'
 import { PortableText } from '@portabletext/react'
 import {
   getNewsletterIssueBySlug,
@@ -12,6 +13,7 @@ import {
   formatNewsletterIssueDate,
   getNewsletterIssuePdfHref,
 } from '@/lib/newsletter'
+import { safePortableTextLinkHref } from '@/lib/search-safety'
 
 export const revalidate = 120
 
@@ -28,31 +30,67 @@ export async function generateStaticParams() {
 
 const portableTextComponents = {
   types: {
-    image: ({ value }: any) => {
+    image: ({ value }: { value: { caption?: string } }) => {
       const src = urlFor(value).width(900).fit('max').url()
+      const caption =
+        typeof value.caption === 'string' && value.caption.trim() ? value.caption.trim() : ''
       return (
         <figure className="my-6">
           <Image
             src={src}
-            alt={value.caption ?? ''}
+            alt={caption || 'Illustration in this issue'}
             width={900}
             height={600}
             className="rounded-lg w-full object-cover"
           />
-          {value.caption ? (
-            <figcaption className="mt-2 text-center text-sm text-gray-500 italic">{value.caption}</figcaption>
+          {caption ? (
+            <figcaption className="mt-2 text-center text-sm text-gray-500 italic">{caption}</figcaption>
           ) : null}
         </figure>
       )
     },
   },
   block: {
-    normal: ({ children }: any) => <p className="mb-4 leading-relaxed text-gray-700">{children}</p>,
-    h2: ({ children }: any) => <h2 className="text-2xl font-bold text-eaa-blue mt-8 mb-3">{children}</h2>,
-    h3: ({ children }: any) => <h3 className="text-xl font-bold text-eaa-blue mt-6 mb-2">{children}</h3>,
-    blockquote: ({ children }: any) => (
+    normal: ({ children }: { children?: ReactNode }) => (
+      <p className="mb-4 leading-relaxed text-gray-700">{children}</p>
+    ),
+    h2: ({ children }: { children?: ReactNode }) => (
+      <h2 className="text-2xl font-bold text-eaa-blue mt-8 mb-3">{children}</h2>
+    ),
+    h3: ({ children }: { children?: ReactNode }) => (
+      <h3 className="text-xl font-bold text-eaa-blue mt-6 mb-2">{children}</h3>
+    ),
+    blockquote: ({ children }: { children?: ReactNode }) => (
       <blockquote className="border-l-4 border-eaa-yellow pl-4 italic text-gray-600 my-4">{children}</blockquote>
     ),
+  },
+  marks: {
+    link: ({ children, value }: { children?: ReactNode; value?: { href?: string } }) => {
+      const safe = safePortableTextLinkHref(value?.href)
+      if (!safe) {
+        return <span className="underline decoration-gray-400">{children}</span>
+      }
+      if (safe.startsWith('http://') || safe.startsWith('https://')) {
+        return (
+          <a
+            href={safe}
+            className="text-eaa-blue underline rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-eaa-blue focus-visible:ring-offset-2"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {children}
+          </a>
+        )
+      }
+      return (
+        <Link
+          href={safe}
+          className="text-eaa-blue underline rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-eaa-blue focus-visible:ring-offset-2"
+        >
+          {children}
+        </Link>
+      )
+    },
   },
 }
 
@@ -98,10 +136,10 @@ export default async function NewsletterIssuePage({ params }: { params: Promise<
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <Link
         href="/newsletter"
-        className="inline-flex items-center gap-1 text-sm text-eaa-light-blue hover:text-eaa-blue font-semibold mb-8 transition-colors"
+        className="inline-flex items-center gap-1 text-sm text-eaa-light-blue hover:text-eaa-blue font-semibold mb-8 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-eaa-blue focus-visible:ring-offset-2 rounded"
         aria-label="Back to NAVCOM newsletter archive"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
         NAVCOM archive
@@ -124,7 +162,7 @@ export default async function NewsletterIssuePage({ params }: { params: Promise<
             href={pdfHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center rounded-full bg-eaa-blue text-white px-6 py-2.5 text-sm font-bold hover:bg-eaa-light-blue transition-colors"
+            className="inline-flex items-center justify-center rounded-full bg-eaa-blue text-white px-6 py-2.5 text-sm font-bold hover:bg-eaa-light-blue transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-eaa-blue focus-visible:ring-offset-2"
             aria-label={`Download PDF for ${issue.title} (opens in a new tab)`}
           >
             Download PDF
@@ -146,7 +184,7 @@ export default async function NewsletterIssuePage({ params }: { params: Promise<
       ) : null}
 
       {hasBody ? (
-        <section className="prose max-w-none">
+        <section className="prose max-w-none" aria-label="Newsletter issue content">
           <PortableText value={issue.content} components={portableTextComponents} />
         </section>
       ) : (
