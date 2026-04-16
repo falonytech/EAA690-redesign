@@ -275,6 +275,23 @@ export async function getHomePage() {
   `)
 }
 
+/** Singleton news page settings (Studio → News Page). */
+export async function getNewsPage() {
+  const freshClient = createClient({
+    projectId: SANITY_PROJECT_ID,
+    dataset: SANITY_DATASET,
+    apiVersion: '2024-01-01',
+    useCdn: false,
+  })
+  return freshClient.fetch(`
+    *[_type == "newsPage" && _id == "newsPage"][0] {
+      _id,
+      heroImage,
+      heroImageAlt
+    }
+  `)
+}
+
 // Fetch site settings (logo, contact info, social links, etc.)
 export async function getSiteSettings() {
   const client = getSanityClient()

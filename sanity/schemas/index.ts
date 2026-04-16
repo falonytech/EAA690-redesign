@@ -7,6 +7,7 @@ import boardMember from './boardMember'
 import kudos from './kudos'
 import siteSettings from './siteSettings'
 import homePage from './homePage'
+import newsPage from './newsPage'
 import page from './page'
 import storeCategory from './storeCategory'
 import storeProduct from './storeProduct'
@@ -25,5 +26,6 @@ export const schemaTypes = [
 
   // Singletons
   homePage,
+  newsPage,
   siteSettings,
 ]

@@ -1,6 +1,7 @@
-import { getNewsArticles } from '@/lib/sanity'
+import { getNewsArticles, getNewsPage, urlFor } from '@/lib/sanity'
 import type { NewsArticle } from '@/lib/sanity-types'
 import Link from 'next/link'
+import Image from 'next/image'
 
 /** Dynamic: avoid stale listing after CMS publishes (ISR was caching HTML for minutes). */
 export const revalidate = 0
@@ -42,7 +43,21 @@ function formatDate(dateString: string): string {
 export default async function NewsPage() {
   // Try to fetch from Sanity, fall back to hardcoded data
   let newsItems: NewsArticle[] = fallbackNews
-  
+  let heroImageSrc = '/images/news-hero.jpg'
+  let heroImageAlt = 'EAA 690 members and aircraft at Briscoe Field'
+
+  try {
+    const newsPageData = await getNewsPage()
+    if (newsPageData?.heroImage) {
+      heroImageSrc = urlFor(newsPageData.heroImage).width(1600).height(600).fit('crop').url()
+    }
+    if (newsPageData?.heroImageAlt?.trim()) {
+      heroImageAlt = newsPageData.heroImageAlt.trim()
+    }
+  } catch {
+    // Sanity not configured or error — use static fallback
+  }
+
   try {
     const sanityNews = await getNewsArticles()
     if (sanityNews && sanityNews.length > 0) {
@@ -54,8 +69,20 @@ export default async function NewsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-4xl font-bold text-eaa-blue mb-8">News</h1>
+    <div>
+      <div className="relative w-full h-64 sm:h-80 md:h-96 overflow-hidden">
+        <Image
+          src={heroImageSrc}
+          alt={heroImageAlt}
+          fill
+          className="object-cover object-center"
+          priority
+          sizes="100vw"
+        />
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <h1 className="text-4xl font-bold text-eaa-blue mb-8">News</h1>
 
       <div className="space-y-8">
         {newsItems.map((item) => (
@@ -99,6 +126,7 @@ export default async function NewsPage() {
           </Link>{' '}
           and follow us on social media.
         </p>
+      </div>
       </div>
     </div>
   )

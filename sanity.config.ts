@@ -37,6 +37,10 @@ export default defineConfig({
               .title('Home Page')
               .id('homePage')
               .child(S.document().schemaType('homePage').documentId('homePage')),
+            S.listItem()
+              .title('News Page')
+              .id('newsPage')
+              .child(S.document().schemaType('newsPage').documentId('newsPage')),
             S.divider(),
             // Regular document types
             S.documentTypeListItem('event').title('Events'),

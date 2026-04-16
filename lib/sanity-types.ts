@@ -102,6 +102,13 @@ export interface HomeProgramCard {
   cta?: string
 }
 
+/** Singleton `newsPage` — see sanity/schemas/newsPage.ts */
+export interface NewsPageContent {
+  _id?: string
+  heroImage?: SanityImage
+  heroImageAlt?: string
+}
+
 /** Singleton `homePage` — see sanity/schemas/homePage.ts */
 export interface HomePageContent {
   _id?: string
