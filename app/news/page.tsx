@@ -49,7 +49,7 @@ export default async function NewsPage() {
   try {
     const newsPageData = await getNewsPage()
     if (newsPageData?.heroImage) {
-      heroImageSrc = urlFor(newsPageData.heroImage).width(1600).height(600).fit('crop').url()
+      heroImageSrc = urlFor(newsPageData.heroImage).width(2000).fit('max').url()
     }
     if (newsPageData?.heroImageAlt?.trim()) {
       heroImageAlt = newsPageData.heroImageAlt.trim()
@@ -87,16 +87,20 @@ export default async function NewsPage() {
 
       <div className="space-y-8">
         {newsItems.map((item) => (
-          <article key={item._id} className="bg-white rounded-lg shadow-md p-6">
+          <article key={item._id} aria-labelledby={`news-title-${item._id}`} className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-4">
-              <time className="text-sm text-gray-500" dateTime={item.publishedAt}>
+              <time
+                className="text-sm text-gray-500"
+                dateTime={item.publishedAt}
+                title={formatDate(item.publishedAt)}
+              >
                 {formatDate(item.publishedAt)}
               </time>
               {item.author && (
                 <span className="text-sm text-gray-500">By {item.author}</span>
               )}
             </div>
-            <h2 className="text-2xl font-bold text-eaa-blue mb-3">
+            <h2 id={`news-title-${item._id}`} className="text-2xl font-bold text-eaa-blue mb-3">
               {item.slug?.current ? (
                 <Link
                   href={`/news/${item.slug.current}`}
