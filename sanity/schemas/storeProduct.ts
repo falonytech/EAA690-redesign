@@ -50,11 +50,12 @@ export default {
         'Paste the Stripe Price ID (e.g. price_1ABCxyz…) from Stripe Dashboard → Products. Preferred for checkout. Takes priority over unit amount and purchase URL.',
     },
     {
-      name: 'unitAmountCents',
-      title: 'Unit amount (USD cents)',
+      name: 'unitAmountDollars',
+      title: 'Price (USD)',
       type: 'number',
       description:
-        'Optional one-time price in whole cents (e.g. 1500 = $15.00) when no Stripe Price ID. Checkout amounts are validated on the server from the catalog—do not use for recurring memberships; use a Stripe Price ID for subscriptions.',
+        'One-time price in dollars (e.g. 150 = $150.00) when no Stripe Price ID. Checkout amounts are validated on the server—do not use for recurring memberships; use a Stripe Price ID for subscriptions.',
+      validation: (Rule: any) => Rule.min(0.5).max(5000),
     },
     {
       name: 'externalPurchaseUrl',

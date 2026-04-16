@@ -494,7 +494,7 @@ export async function getStoreProducts() {
       image,
       externalPurchaseUrl,
       stripePriceId,
-      unitAmountCents,
+      "unitAmountCents": round(unitAmountDollars * 100),
       sortOrder,
       isActive,
       categories[]->{
