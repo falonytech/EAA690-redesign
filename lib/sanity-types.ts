@@ -141,6 +141,58 @@ export interface HomePageContent {
   }
 }
 
+// ── Media ──────────────────────────────────────────────────────────────────────
+
+export type MediaDisplayType = 'slideshow' | 'imageGrid' | 'videoEmbed'
+
+export interface MediaGalleryImage {
+  _key?: string
+  _type: 'image'
+  asset: { _ref: string; _type: 'reference' }
+  hotspot?: { x: number; y: number; height: number; width: number }
+  alt?: string
+  caption?: string
+}
+
+/** Card data returned by getMediaGalleries() for the /media index. */
+export interface MediaGalleryCard {
+  _id: string
+  title: string
+  slug: { current: string }
+  publishedAt?: string
+  coverImage?: SanityImage
+  coverImageAlt?: string
+  description?: string
+  displayType: MediaDisplayType
+  imageCount?: number
+}
+
+/** Full document returned by getMediaGalleryBySlug(). */
+export interface MediaGallery {
+  _id: string
+  title: string
+  slug: { current: string }
+  publishedAt?: string
+  coverImage?: SanityImage
+  coverImageAlt?: string
+  description?: string
+  richDescription?: unknown[]
+  displayType: MediaDisplayType
+  images?: MediaGalleryImage[]
+  videoUrl?: string
+  videoTitle?: string
+  videoSubtitle?: string
+}
+
+/** Singleton mediaPage — see sanity/schemas/mediaPage.ts */
+export interface MediaPageContent {
+  _id?: string
+  heroImage?: SanityImage
+  heroImageAlt?: string
+  pageTitle?: string
+  pageDescription?: string
+}
+
 export interface StoreCategory {
   _id: string
   title: string

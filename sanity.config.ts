@@ -41,6 +41,10 @@ export default defineConfig({
               .title('News Page')
               .id('newsPage')
               .child(S.document().schemaType('newsPage').documentId('newsPage')),
+            S.listItem()
+              .title('Media Page')
+              .id('mediaPage')
+              .child(S.document().schemaType('mediaPage').documentId('mediaPage')),
             S.divider(),
             // Regular document types
             S.documentTypeListItem('event').title('Events'),
@@ -51,6 +55,8 @@ export default defineConfig({
             S.documentTypeListItem('page').title('Pages'),
             S.divider(),
             S.documentTypeListItem('kudos').title('Kudos'),
+            S.divider(),
+            S.documentTypeListItem('mediaGallery').title('Media Galleries'),
             S.divider(),
             S.documentTypeListItem('storeCategory').title('Store Categories'),
             S.documentTypeListItem('storeProduct').title('Store Products'),

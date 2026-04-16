@@ -493,6 +493,99 @@ export async function getStoreCategories() {
   `)
 }
 
+// ── Media ──────────────────────────────────────────────────────────────────────
+
+/** Singleton media page settings (Studio → Media Page). */
+export async function getMediaPage() {
+  const freshClient = createClient({
+    projectId: SANITY_PROJECT_ID,
+    dataset: SANITY_DATASET,
+    apiVersion: '2024-01-01',
+    useCdn: false,
+  })
+  return freshClient.fetch(`
+    *[_type == "mediaPage" && _id == "mediaPage"][0] {
+      _id,
+      heroImage,
+      heroImageAlt,
+      pageTitle,
+      pageDescription
+    }
+  `)
+}
+
+/** All media galleries (newest first) for the /media index listing. */
+export async function getMediaGalleries() {
+  const freshClient = createClient({
+    projectId: SANITY_PROJECT_ID,
+    dataset: SANITY_DATASET,
+    apiVersion: '2024-01-01',
+    useCdn: false,
+  })
+  return freshClient.fetch(`
+    *[_type == "mediaGallery"] | order(publishedAt desc) {
+      _id,
+      title,
+      slug,
+      publishedAt,
+      coverImage,
+      coverImageAlt,
+      description,
+      displayType,
+      "imageCount": count(images)
+    }
+  `)
+}
+
+/** Single media gallery by slug (detail page). */
+export async function getMediaGalleryBySlug(slug: string) {
+  const freshClient = createClient({
+    projectId: SANITY_PROJECT_ID,
+    dataset: SANITY_DATASET,
+    apiVersion: '2024-01-01',
+    useCdn: false,
+  })
+  return freshClient.fetch(
+    `
+    *[_type == "mediaGallery" && slug.current == $slug][0] {
+      _id,
+      title,
+      slug,
+      publishedAt,
+      coverImage,
+      coverImageAlt,
+      description,
+      richDescription,
+      displayType,
+      images[] {
+        ...,
+        alt,
+        caption
+      },
+      videoUrl,
+      videoTitle,
+      videoSubtitle
+    }
+  `,
+    { slug }
+  )
+}
+
+/** Slugs for generateStaticParams on the detail page. */
+export async function getMediaGallerySlugs() {
+  const freshClient = createClient({
+    projectId: SANITY_PROJECT_ID,
+    dataset: SANITY_DATASET,
+    apiVersion: '2024-01-01',
+    useCdn: false,
+  })
+  return freshClient.fetch<Array<{ slug: string }>>(`
+    *[_type == "mediaGallery" && defined(slug.current)] {
+      "slug": slug.current
+    }
+  `)
+}
+
 // Store: products with resolved category refs (useCdn off so new items show quickly)
 export async function getStoreProducts() {
   const freshClient = createClient({

@@ -8,6 +8,8 @@ import kudos from './kudos'
 import siteSettings from './siteSettings'
 import homePage from './homePage'
 import newsPage from './newsPage'
+import mediaPage from './mediaPage'
+import mediaGallery from './mediaGallery'
 import page from './page'
 import storeCategory from './storeCategory'
 import storeProduct from './storeProduct'
@@ -20,6 +22,7 @@ export const schemaTypes = [
   presentation,
   boardMember,
   kudos,
+  mediaGallery,
   page,
   storeCategory,
   storeProduct,
@@ -27,5 +30,6 @@ export const schemaTypes = [
   // Singletons
   homePage,
   newsPage,
+  mediaPage,
   siteSettings,
 ]
