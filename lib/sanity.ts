@@ -441,7 +441,13 @@ export async function getKudosPage() {
   return freshClient.fetch(`
     *[_type == "kudosPage" && _id == "kudosPage"][0] {
       _id,
-      heroImage,
+      heroImage {
+        ...,
+        asset->{
+          _id,
+          metadata { dimensions { width, height, aspectRatio } }
+        }
+      },
       heroImageAlt,
       pageTitle,
       tagline,

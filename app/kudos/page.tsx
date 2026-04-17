@@ -90,30 +90,36 @@ export default async function KudosPage() {
   const tagline = pageContent?.tagline?.trim() || DEFAULT_TAGLINE
   const intro = pageContent?.intro?.trim() || DEFAULT_INTRO
 
-  // Hero image (optional, CMS-managed). Alt text is required by the schema when an image is set.
-  const heroImageUrl = pageContent?.heroImage
-    ? urlFor(pageContent.heroImage as Parameters<typeof urlFor>[0])
-        .width(2000)
-        .fit('max')
-        .url()
-    : null
-  const heroImageAlt = pageContent?.heroImageAlt?.trim() || ''
+  // Hero image: prefer the CMS-managed image if set, otherwise fall back to
+  // the static banner shipped in /public so /kudos has a hero out of the box.
+  type HeroImageWithAsset = Parameters<typeof urlFor>[0] & {
+    asset?: { metadata?: { dimensions?: { width?: number; height?: number } } }
+  }
+  const cmsHeroImage = pageContent?.heroImage as HeroImageWithAsset | undefined
+  const cmsHeroDimensions = cmsHeroImage?.asset?.metadata?.dimensions
+  const heroImageUrl = cmsHeroImage
+    ? urlFor(cmsHeroImage).width(2048).fit('max').url()
+    : '/images/kudos-hero.jpg'
+  // Banner from EAA690.org/kudos is by John Slemp; describe it for SR users in the static-fallback case.
+  const heroImageAlt = cmsHeroImage
+    ? pageContent?.heroImageAlt?.trim() || ''
+    : 'Sunset sky over Briscoe Field with a lone aircraft on approach'
+  const heroWidth = cmsHeroDimensions?.width ?? 2048
+  const heroHeight = cmsHeroDimensions?.height ?? 511
 
   return (
     <div>
-      {heroImageUrl ? (
-        <div className="w-full">
-          <Image
-            src={heroImageUrl}
-            alt={heroImageAlt}
-            width={2000}
-            height={900}
-            className="w-full h-auto block"
-            priority
-            sizes="100vw"
-          />
-        </div>
-      ) : null}
+      <div className="w-full">
+        <Image
+          src={heroImageUrl}
+          alt={heroImageAlt}
+          width={heroWidth}
+          height={heroHeight}
+          className="w-full h-auto block"
+          priority
+          sizes="100vw"
+        />
+      </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <header className="mb-10">
