@@ -61,6 +61,25 @@
   animation: slide-up 0.2s ease-out both;
 }
 
+/**
+ * WCAG 2.3.3 (Animation from Interactions) + 2.2.2 (Pause, Stop, Hide):
+ * Honor the OS-level "reduce motion" preference. We collapse animations and
+ * transitions to ~no-op durations so vestibular-sensitive visitors aren't
+ * exposed to spinners, slide-ins, smooth-scrolling, or transition flashes.
+ * Scroll-snap and smooth scroll are also disabled to avoid disorientation.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* FullCalendar - EAA brand overrides */
 .fc-eaa {
   --fc-button-bg-color:           #003366;

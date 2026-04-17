@@ -1,9 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { parseContactPayload, sendContactEmail } from '@/lib/contact-email'
+import { allowFormSubmission } from '@/lib/form-rate-limit'
 
 const MAX_BODY_BYTES = 32_768
 
+function clientIp(request: NextRequest): string {
+  const xf = request.headers.get('x-forwarded-for')
+  if (xf) return xf.split(',')[0]?.trim().slice(0, 128) || 'unknown'
+  return request.headers.get('x-real-ip')?.trim().slice(0, 128) || 'unknown'
+}
+
 export async function POST(request: NextRequest) {
+  // OWASP: per-IP throttle so the contact form can't be used as an outbound
+  // spam relay or to flood the chapter inbox via Resend.
+  if (!allowFormSubmission(`contact:${clientIp(request)}`)) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    )
+  }
+
   const contentLength = request.headers.get('content-length')
   if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
     return NextResponse.json({ error: 'Payload too large' }, { status: 413 })

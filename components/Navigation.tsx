@@ -197,21 +197,29 @@ export default function Navigation({
           {/* Desktop Navigation — xl (1280px) so mid-width viewports use the hamburger + avoid overlap with cart/account */}
           <div className="hidden xl:flex flex-1 justify-center items-center space-x-1 min-w-0 px-1 sm:px-2">
             {navigation.map((item) => (
+              /**
+               * WCAG 2.1.1 (Keyboard) — submenu must reveal on keyboard focus, not
+               * just hover. `focus-within` keeps the panel open while either the
+               * parent link OR any submenu link has focus, so Tab navigation works.
+               */
               <div key={item.name} className="relative group">
                 <Link
                   href={item.href}
+                  aria-haspopup={item.submenu ? 'true' : undefined}
                   className="px-2 py-2 text-sm font-medium hover:text-eaa-yellow transition-colors whitespace-nowrap"
                 >
                   {item.name}
                 </Link>
                 {item.submenu && (
-                  <div className="absolute left-0 mt-2 w-56 bg-white text-eaa-blue rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div
+                    className="absolute left-0 mt-2 w-56 bg-white text-eaa-blue rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-200 z-50"
+                  >
                     <div className="py-1">
                       {item.submenu.map((subitem) => (
                         <Link
                           key={subitem.name}
                           href={subitem.href}
-                          className="block px-4 py-2 text-sm hover:bg-eaa-blue hover:text-white transition-colors"
+                          className="block px-4 py-2 text-sm hover:bg-eaa-blue hover:text-white focus-visible:bg-eaa-blue focus-visible:text-white focus-visible:outline-none transition-colors"
                         >
                           {subitem.name}
                         </Link>

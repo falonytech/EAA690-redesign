@@ -46,6 +46,17 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;')
 }
 
+/**
+ * Strip ASCII control characters (incl. CR/LF/NUL) from values that flow into
+ * email headers (Subject, From, Reply-To). Defense-in-depth against header
+ * injection (RFC 5322 §2.2 — header fields cannot contain CR/LF). Resend's SDK
+ * is expected to sanitize, but enforcing it here makes the contract explicit
+ * and protects us if we swap providers later.
+ */
+function stripCtl(s: string, max = 200): string {
+  return s.replace(/[\x00-\x1F\x7F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max)
+}
+
 export function parseContactPayload(
   data: Record<string, unknown>
 ): { ok: true; payload: ContactPayload } | { ok: false; error: string } {
@@ -112,7 +123,12 @@ export async function sendContactEmail(payload: ContactPayload): Promise<void> {
   }
 
   const label = SUBJECT_LABELS[payload.subject]
-  const mailSubject = `[EAA 690 Website] ${label} — ${payload.name}`
+  // Header-injection hardening: name is interpolated into the Subject header.
+  // We also normalize the email used as Reply-To so an attacker can't smuggle
+  // newlines through it even if a malformed value somehow bypassed validation.
+  const safeName = stripCtl(payload.name, 120)
+  const safeReplyTo = stripCtl(payload.email, 320)
+  const mailSubject = `[EAA 690 Website] ${label} — ${safeName}`
 
   const text = [
     `New message from the EAA 690 contact form.`,
@@ -146,7 +162,7 @@ export async function sendContactEmail(payload: ContactPayload): Promise<void> {
   const { error } = await resend.emails.send({
     from,
     to,
-    replyTo: payload.email,
+    replyTo: safeReplyTo,
     subject: mailSubject,
     text,
     html,

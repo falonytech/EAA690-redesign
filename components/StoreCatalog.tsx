@@ -9,6 +9,7 @@ import { urlFor } from '@/lib/sanity'
 import { useStoreCart } from '@/components/StoreCartProvider'
 import { productCanCheckoutOnSite } from '@/lib/store-product'
 import { startStoreCartCheckout } from '@/lib/store-checkout-client'
+import { safePortableTextLinkHref } from '@/lib/search-safety'
 
 const productDescriptionComponents = {
   block: {
@@ -20,13 +21,16 @@ const productDescriptionComponents = {
     strong: ({ children }: { children?: React.ReactNode }) => <strong className="font-semibold">{children}</strong>,
     em: ({ children }: { children?: React.ReactNode }) => <em>{children}</em>,
     link: ({ children, value }: { children?: React.ReactNode; value?: { href?: string } }) => {
-      const href = value?.href?.trim() ?? ''
-      if (!href) return <span>{children}</span>
-      const isExternal = href.startsWith('http://') || href.startsWith('https://')
+      // OWASP A03 (DOM XSS) + open-redirect: hrefs come from CMS Portable Text
+      // and must be filtered. Reject `javascript:` / `data:` / protocol-relative
+      // URIs and only render http(s) absolute or same-origin paths.
+      const safe = safePortableTextLinkHref(value?.href)
+      if (!safe) return <span>{children}</span>
+      const isExternal = safe.startsWith('http://') || safe.startsWith('https://')
       if (isExternal) {
         return (
           <a
-            href={href}
+            href={safe}
             className="underline text-eaa-blue hover:text-blue-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-eaa-blue rounded-sm"
             target="_blank"
             rel="noopener noreferrer"
@@ -37,7 +41,7 @@ const productDescriptionComponents = {
       }
       return (
         <Link
-          href={href}
+          href={safe}
           className="underline text-eaa-blue hover:text-blue-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-eaa-blue rounded-sm"
         >
           {children}

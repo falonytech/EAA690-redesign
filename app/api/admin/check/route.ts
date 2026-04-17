@@ -1,126 +1,75 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Pool } from 'pg'
+import { getAuth } from '@/lib/better-auth'
 
 /**
- * Diagnostic route to check if admin account exists
- * This is a temporary route for debugging - remove in production
+ * Admin-only diagnostic: looks up a single user by email and reports whether
+ * they exist and whether they hold admin role.
+ *
+ * SECURITY: This route was previously unauthenticated and returned the full
+ * user row (including hashed credentials columns when present), the list of
+ * the 10 most recent users, and the user-table schema. That made it a severe
+ * information-disclosure / user-enumeration sink (OWASP A01: Broken Access
+ * Control, A02: Cryptographic Failures via password-hash exposure). It is now
+ * restricted to authenticated admins and only returns the booleans the admin
+ * UI actually needs.
  */
-export async function GET(request: NextRequest) {
-  let pool: Pool | null = null
-  
-  try {
-    // Check if DATABASE_URL is set
-    if (!process.env.DATABASE_URL) {
-      return NextResponse.json(
-        { error: 'DATABASE_URL environment variable is not set' },
-        { status: 500 }
-      )
-    }
-
-    // Get database connection
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.DATABASE_URL?.includes("localhost") 
-        ? false 
-        : { rejectUnauthorized: false },
-    })
-
-    // Get email from query params
-    const { searchParams } = new URL(request.url)
-    const email = searchParams.get('email') || 'falonya@gmail.com'
-
-    // Check user table structure
-    const columnCheck = await pool.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'user' 
-      AND table_schema = 'public'
-    `)
-    
-    // Query user by email
-    const userResult = await pool.query(
-      'SELECT * FROM "user" WHERE email = $1',
-      [email.toLowerCase()]
-    )
-    
-    // Check admin table if it exists
-    let adminCheck = null
-    try {
-      const adminTableCheck = await pool.query(`
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'admin'
-      `)
-      
-      if (adminTableCheck.rows.length > 0 && userResult.rows.length > 0) {
-        const adminResult = await pool.query(
-          'SELECT * FROM admin WHERE user_id = $1',
-          [userResult.rows[0].id]
-        )
-        adminCheck = adminResult.rows
-      }
-    } catch (e) {
-      // Admin table might not exist
-    }
-    
-    // Get all users (limited to 10 for privacy)
-    // Dynamically build the SELECT based on columns that actually exist
-    const existingCols = columnCheck.rows.map((r: { column_name: string }) => r.column_name)
-    const wantedCols = ['id', 'email', 'name', 'role', 'created_at', 'createdAt', 'emailVerified', 'email_verified']
-    const selectCols = wantedCols
-      .filter(col => existingCols.includes(col))
-      .map(col => `"${col}"`)
-      .join(', ')
-    const orderByCol = existingCols.includes('created_at') ? '"created_at"'
-      : existingCols.includes('createdAt') ? '"createdAt"'
-      : '"id"'
-    const allUsersResult = await pool.query(
-      `SELECT ${selectCols} FROM "user" ORDER BY ${orderByCol} DESC LIMIT 10`
-    )
-
-    return NextResponse.json({
-      success: true,
-      email: email.toLowerCase(),
-      userFound: userResult.rows.length > 0,
-      user: userResult.rows[0] || null,
-      isAdmin: adminCheck && adminCheck.length > 0,
-      adminRecord: adminCheck || null,
-      userTableColumns: columnCheck.rows.map(r => r.column_name),
-      recentUsers: allUsersResult.rows,
-    })
-  } catch (error) {
-    console.error('Database check error:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    const errorCode = (error as any)?.code
-    const errorDetails = {
-      message: errorMessage,
-      code: errorCode,
-      hasDatabaseUrl: !!process.env.DATABASE_URL,
-      databaseUrlPrefix: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 50) + '...' : 'Not set',
-    }
-    
-    // Log full error for debugging
-    console.error('Full error details:', {
-      error,
-      errorMessage,
-      errorCode,
-      stack: error instanceof Error ? error.stack : undefined,
-    })
-    
-    return NextResponse.json(
-      { 
-        error: 'Failed to check database',
-        details: errorMessage,
-        errorCode: errorCode,
-        ...(process.env.NODE_ENV === 'development' && errorDetails),
-      },
-      { status: 500 }
-    )
-  } finally {
-    if (pool) {
-      await pool.end().catch(console.error)
-    }
+async function requireAdmin(request: NextRequest): Promise<true | NextResponse> {
+  const session = await getAuth().api.getSession({ headers: request.headers })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  if ((session.user as { role?: string }).role !== 'admin') {
+    return NextResponse.json({ error: 'Forbidden — admin role required' }, { status: 403 })
+  }
+  return true
 }
 
+const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/
+
+export async function GET(request: NextRequest) {
+  const check = await requireAdmin(request)
+  if (check !== true) return check
+
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json(
+      { error: 'DATABASE_URL is not configured' },
+      { status: 503 }
+    )
+  }
+
+  const { searchParams } = new URL(request.url)
+  const rawEmail = searchParams.get('email') ?? ''
+  const email = rawEmail.trim().toLowerCase().slice(0, 320)
+  if (!email || !EMAIL_RE.test(email)) {
+    return NextResponse.json({ error: 'A valid `email` query parameter is required.' }, { status: 400 })
+  }
+
+  let pool: Pool | null = null
+  try {
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.DATABASE_URL.includes('localhost')
+        ? false
+        : { rejectUnauthorized: false },
+      max: 1,
+    })
+
+    const userResult = await pool.query<{ id: string; role: string | null }>(
+      'SELECT id, role FROM "user" WHERE email = $1 LIMIT 1',
+      [email]
+    )
+    const row = userResult.rows[0]
+
+    return NextResponse.json({
+      email,
+      userExists: !!row,
+      isAdmin: row?.role === 'admin',
+    })
+  } catch (error) {
+    console.error('admin/check error:', error)
+    return NextResponse.json({ error: 'Failed to check user' }, { status: 500 })
+  } finally {
+    if (pool) await pool.end().catch(() => {})
+  }
+}
