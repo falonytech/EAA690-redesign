@@ -275,6 +275,7 @@ export const programSectionForm = {
           { title: 'Scholarships', value: 'scholarship' },
           { title: 'Youth Aviation Program', value: 'youth_aviation' },
           { title: 'VMC/IMC Club signup', value: 'vmc_imc' },
+          { title: 'Outreach / event request (Heidi)', value: 'outreach' },
         ],
       },
       description: 'Field layout and validation are defined in the website code; open/closed is controlled in Site Settings.',

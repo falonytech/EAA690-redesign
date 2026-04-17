@@ -245,6 +245,26 @@ export default {
             },
           ],
         },
+        {
+          name: 'outreach',
+          title: 'Outreach (Heidi / event requests)',
+          type: 'object',
+          fields: [
+            {
+              name: 'registrationOpen',
+              title: 'Accept event / appearance requests',
+              type: 'boolean',
+              initialValue: true,
+            },
+            {
+              name: 'closedMessage',
+              title: 'Message when requests are closed',
+              type: 'text',
+              rows: 2,
+              description: 'Optional. Shown instead of the request form when closed.',
+            },
+          ],
+        },
       ],
     },
   ],

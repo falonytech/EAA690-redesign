@@ -1,4 +1,4 @@
-export type ProgramFormSlotKey = 'youthAviation' | 'scholarship' | 'summerCamp' | 'vmcImc'
+export type ProgramFormSlotKey = 'youthAviation' | 'scholarship' | 'summerCamp' | 'vmcImc' | 'outreach'
 
 /** Matches `FormType` in `lib/forms-db` — kept here so this module stays client-safe (no `pg`). */
 export const FORM_TYPE_TO_PROGRAM_KEY = {
@@ -6,6 +6,7 @@ export const FORM_TYPE_TO_PROGRAM_KEY = {
   scholarship: 'scholarship',
   summer_camp: 'summerCamp',
   vmc_imc: 'vmcImc',
+  outreach: 'outreach',
 } as const
 
 export type ProgramFormTypeKey = keyof typeof FORM_TYPE_TO_PROGRAM_KEY
@@ -62,6 +63,7 @@ export function normalizeProgramForms(raw: unknown): Record<ProgramFormSlotKey, 
     scholarship: normalizeSlot(p.scholarship),
     summerCamp: normalizeSlot(p.summerCamp, { documentsAlwaysVisible: true }),
     vmcImc: normalizeSlot(p.vmcImc, { documentsAlwaysVisible: true }),
+    outreach: normalizeSlot(p.outreach, { documentsAlwaysVisible: true }),
   }
 }
 

@@ -6,6 +6,7 @@ import SummerCampForm from '@/components/forms/SummerCampForm'
 import ScholarshipForm from '@/components/forms/ScholarshipForm'
 import YouthAviationForm from '@/components/forms/YouthAviationForm'
 import VmcImcForm from '@/components/forms/VmcImcForm'
+import OutreachForm from '@/components/forms/OutreachForm'
 import ProgramPortableText from '@/components/programs/ProgramPortableText'
 import type { PortableTextBlock } from '@portabletext/types'
 import Link from 'next/link'
@@ -17,7 +18,7 @@ type Props = {
 }
 
 export default async function ProgramFormBlock({ sectionHeading, intro, formKey }: Props) {
-  const valid: FormType[] = ['summer_camp', 'scholarship', 'youth_aviation', 'vmc_imc']
+  const valid: FormType[] = ['summer_camp', 'scholarship', 'youth_aviation', 'vmc_imc', 'outreach']
   const key = typeof formKey === 'string' && valid.includes(formKey as FormType) ? (formKey as FormType) : null
   if (!key) {
     return (
@@ -37,8 +38,10 @@ export default async function ProgramFormBlock({ sectionHeading, intro, formKey 
       <ScholarshipForm />
     ) : key === 'youth_aviation' ? (
       <YouthAviationForm />
-    ) : (
+    ) : key === 'vmc_imc' ? (
       <VmcImcForm />
+    ) : (
+      <OutreachForm />
     )
 
   return (

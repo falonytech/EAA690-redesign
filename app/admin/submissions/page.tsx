@@ -4,7 +4,7 @@ import AdminGuard from '@/components/AdminGuard'
 import { orderedSubmissionEntries, submissionFieldLabel } from '@/lib/submission-field-order'
 import { useEffect, useState, useCallback } from 'react'
 
-type FormType = 'summer_camp' | 'scholarship' | 'vmc_imc' | 'youth_aviation'
+type FormType = 'summer_camp' | 'scholarship' | 'vmc_imc' | 'youth_aviation' | 'outreach'
 type Status = 'pending' | 'reviewed' | 'accepted' | 'declined'
 
 interface Submission {
@@ -20,6 +20,7 @@ const FORM_LABELS: Record<FormType, string> = {
   scholarship: 'Scholarship',
   vmc_imc: 'VMC/IMC Club',
   youth_aviation: 'Youth Aviation',
+  outreach: 'Outreach',
 }
 
 const STATUS_COLORS: Record<Status, string> = {
@@ -29,7 +30,7 @@ const STATUS_COLORS: Record<Status, string> = {
   declined: 'bg-red-100 text-red-800',
 }
 
-const ALL_TYPES: Array<FormType | 'all'> = ['all', 'summer_camp', 'scholarship', 'vmc_imc', 'youth_aviation']
+const ALL_TYPES: Array<FormType | 'all'> = ['all', 'summer_camp', 'scholarship', 'vmc_imc', 'youth_aviation', 'outreach']
 
 function fmt(val: unknown): string {
   if (val === null || val === undefined) return '—'
@@ -164,6 +165,11 @@ export default function SubmissionsPage() {
                 s.data.camper_first_name
                   ? `${fmt(s.data.camper_first_name)} ${fmt(s.data.camper_last_name)}`
                   : fmt(s.data.youth_name) !== '—' ? fmt(s.data.youth_name) :
+                  s.data.contact_first_name
+                    ? `${fmt(s.data.contact_first_name)} ${fmt(s.data.contact_last_name)}${
+                        fmt(s.data.organization) !== '—' ? ` — ${fmt(s.data.organization)}` : ''
+                      }`
+                    : fmt(s.data.organization) !== '—' ? fmt(s.data.organization) :
                   '(no name)'
 
               return (

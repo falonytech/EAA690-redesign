@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto'
 import { Pool } from 'pg'
 import { getEffectiveDatabaseUrl, isPostgresUrl, resolveSqliteFilePath } from './db-resolver'
 
-export type FormType = 'summer_camp' | 'scholarship' | 'vmc_imc' | 'youth_aviation'
+export type FormType = 'summer_camp' | 'scholarship' | 'vmc_imc' | 'youth_aviation' | 'outreach'
 export type SubmissionStatus = 'pending' | 'reviewed' | 'accepted' | 'declined'
 
 export interface FormSubmission {

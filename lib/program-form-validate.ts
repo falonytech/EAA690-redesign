@@ -66,6 +66,22 @@ export function validateProgramFormPayload(
       if (notes != null && notes !== '' && (typeof notes !== 'string' || notes.length > 8000)) return 'Invalid submission'
       return null
     }
+    case 'outreach': {
+      if (!nonEmpty(data.organization, 200)) return 'Invalid submission'
+      if (!nonEmpty(data.contact_first_name, 120)) return 'Invalid submission'
+      if (!nonEmpty(data.contact_last_name, 120)) return 'Invalid submission'
+      if (!okEmail(data.email)) return 'Invalid submission'
+      if (!nonEmpty(data.phone, PHONE_MAX)) return 'Invalid submission'
+      if (!nonEmpty(data.event_date, 200)) return 'Invalid submission'
+      if (!nonEmpty(data.event_location, 500)) return 'Invalid submission'
+      const attendance = data.expected_attendance
+      if (typeof attendance !== 'string' && typeof attendance !== 'number') return 'Invalid submission'
+      const attStr = String(attendance).trim()
+      if (!attStr || attStr.length > 10 || !/^\d+$/.test(attStr)) return 'Invalid submission'
+      const message = data.message
+      if (message != null && message !== '' && (typeof message !== 'string' || message.length > 8000)) return 'Invalid submission'
+      return null
+    }
     case 'vmc_imc': {
       if (!nonEmpty(data.name, 200)) return 'Invalid submission'
       if (!okEmail(data.email)) return 'Invalid submission'

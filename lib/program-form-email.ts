@@ -15,6 +15,7 @@ const FORM_LABELS: Record<FormType, string> = {
   scholarship: 'Scholarship application',
   youth_aviation: 'Youth Aviation Program',
   vmc_imc: 'VMC/IMC Club signup',
+  outreach: 'Outreach / event request (Heidi)',
 }
 
 /** Notify chapter inbox after a successful DB insert (best-effort). */

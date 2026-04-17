@@ -7,7 +7,7 @@ import { allowFormSubmission } from '@/lib/form-rate-limit'
 import { validateProgramFormPayload } from '@/lib/program-form-validate'
 import { sendProgramFormNotificationEmail } from '@/lib/program-form-email'
 
-const VALID_FORM_TYPES: FormType[] = ['summer_camp', 'scholarship', 'vmc_imc', 'youth_aviation']
+const VALID_FORM_TYPES: FormType[] = ['summer_camp', 'scholarship', 'vmc_imc', 'youth_aviation', 'outreach']
 
 // O1: Reject requests whose body exceeds this limit (prevents large-payload DoS)
 const MAX_BODY_BYTES = 32_768 // 32 KB — ample for any legitimate form submission

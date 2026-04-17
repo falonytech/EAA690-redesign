@@ -56,9 +56,21 @@ export const SUBMISSION_FIELD_ORDER: Record<FormType, readonly string[]> = {
     'notes',
     'website',
   ],
+  outreach: [
+    'organization',
+    'contact_first_name',
+    'contact_last_name',
+    'email',
+    'phone',
+    'event_date',
+    'event_location',
+    'expected_attendance',
+    'message',
+    'website',
+  ],
 }
 
-const FORM_SEQUENCE: FormType[] = ['summer_camp', 'scholarship', 'vmc_imc', 'youth_aviation']
+const FORM_SEQUENCE: FormType[] = ['summer_camp', 'scholarship', 'vmc_imc', 'youth_aviation', 'outreach']
 
 function orderKeysForForm(formType: FormType, keys: string[]): string[] {
   const order = SUBMISSION_FIELD_ORDER[formType]
@@ -133,6 +145,13 @@ const LABEL_OVERRIDES: Record<string, string> = {
   interest_areas: 'Areas of interest',
   prior_experience: 'Prior aviation experience',
   notes: 'Additional notes',
+  organization: 'Organization',
+  contact_first_name: 'Contact first name',
+  contact_last_name: 'Contact last name',
+  event_date: 'Date of event (incl. start/end times)',
+  event_location: 'Event location',
+  expected_attendance: 'Anticipated number of participants',
+  message: 'Message',
   website: 'Website (honeypot)',
 }
 
