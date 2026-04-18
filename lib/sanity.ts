@@ -89,6 +89,31 @@ export async function getAllEvents() {
   `)
 }
 
+// Fetch a single event by Sanity document _id.
+// Used by the per-event .ics endpoint so the calendar.ics export stays cheap
+// without round-tripping every event in the dataset.
+export async function getEventById(id: string) {
+  const client = getSanityClient()
+  if (!client) return null
+  return client.fetch(
+    `
+    *[_type == "event" && _id == $id][0] {
+      _id,
+      title,
+      date,
+      startTime,
+      endTime,
+      description,
+      location,
+      eventType,
+      isRecurring,
+      recurringInfo
+    }
+  `,
+    { id }
+  )
+}
+
 // Fetch a single event by slug
 export async function getEventBySlug(slug: string) {
   const client = getSanityClient()

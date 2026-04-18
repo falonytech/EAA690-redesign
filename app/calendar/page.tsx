@@ -1,4 +1,5 @@
 import { getAllEvents } from '@/lib/sanity'
+import { getSiteBaseURL } from '@/lib/site-url'
 import type { Event } from '@/lib/sanity-types'
 import EventCalendar from '@/components/EventCalendar'
 
@@ -76,6 +77,18 @@ export default async function CalendarPage() {
     console.log('Using fallback events (Sanity not configured or unreachable)')
   }
 
+  // Calendar subscription URLs. Built from BETTER_AUTH_URL / VERCEL_URL so the
+  // links work in any environment (preview, prod, custom domain) — and so we
+  // never ship a typo'd hardcoded host again.
+  const baseUrl = getSiteBaseURL()
+  const feedHttpsUrl = `${baseUrl.replace(/\/$/, '')}/api/calendar.ics`
+  // webcal:// is the OS-level "subscribe to calendar" scheme. Strip the
+  // http(s):// prefix and replace with webcal:// — macOS/iOS hand this off
+  // directly to Calendar.app; Outlook on Windows hands it to Outlook.
+  const webcalUrl = feedHttpsUrl.replace(/^https?:\/\//, 'webcal://')
+  const googleSubscribeUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl)}`
+  const outlookSubscribeUrl = `https://outlook.live.com/calendar/0/addfromweb?url=${encodeURIComponent(feedHttpsUrl)}&name=${encodeURIComponent('EAA 690 Events')}`
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
@@ -104,14 +117,14 @@ export default async function CalendarPage() {
       {/* Subscribe to calendar feed */}
       <div className="mt-8 bg-white border border-gray-200 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="flex-1">
-          <h2 className="text-base font-bold text-eaa-blue mb-1">Subscribe to this Calendar</h2>
+          <h2 className="text-base font-bold text-eaa-blue mb-1">Subscribe to All Chapter Events</h2>
           <p className="text-sm text-gray-500">
-            Add all EAA 690 events to Google Calendar, Apple Calendar, or Outlook — they&apos;ll update automatically as new events are published.
+            Recommended: subscribe once and every chapter event will live on your phone or computer calendar — automatically updated as new events are published. Works on iPhone, Mac, Android, Windows.
           </p>
         </div>
         <div className="flex flex-wrap gap-2 sm:flex-shrink-0">
           <a
-            href="https://calendar.google.com/calendar/r?cid=webcal://eaa-960-redesign.vercel.app/api/calendar.ics"
+            href={googleSubscribeUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors"
@@ -125,7 +138,7 @@ export default async function CalendarPage() {
             Google Calendar
           </a>
           <a
-            href="webcal://eaa-960-redesign.vercel.app/api/calendar.ics"
+            href={webcalUrl}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors"
             title="Opens Apple Calendar on Mac or iPhone and prompts you to subscribe"
           >
@@ -140,7 +153,7 @@ export default async function CalendarPage() {
             Apple Calendar
           </a>
           <a
-            href="https://outlook.live.com/calendar/0/addfromweb?url=https://eaa-960-redesign.vercel.app/api/calendar.ics&name=EAA+690+Events"
+            href={outlookSubscribeUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors"

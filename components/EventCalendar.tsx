@@ -121,42 +121,15 @@ function buildOutlookUrl(event: Event): string {
   return `https://outlook.live.com/calendar/0/deeplink/compose?${params}`
 }
 
-function downloadIcs(event: Event): void {
-  const allDay = !event.startTime
-  const start  = toCompactDateTime(event.date, event.startTime)
-  const end    = event.endTime
-    ? toCompactDateTime(event.date, event.endTime)
-    : allDay
-    ? nextDayCompact(event.date)
-    : start
-  const dtstamp = new Date().toISOString().replace(/-/g, '').replace(/:/g, '').replace(/\./g, '').slice(0, 15) + 'Z'
-  const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/,/g, '\\,').replace(/\n/g, '\\n')
-
-  const lines = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//EAA Chapter 690//Calendar//EN',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
-    'BEGIN:VEVENT',
-    `UID:${event._id}@eaa690.org`,
-    `DTSTAMP:${dtstamp}`,
-    allDay ? `DTSTART;VALUE=DATE:${start}` : `DTSTART;TZID=America/New_York:${start}`,
-    allDay ? `DTEND;VALUE=DATE:${end}`     : `DTEND;TZID=America/New_York:${end}`,
-    `SUMMARY:${esc(event.title)}`,
-    event.description ? `DESCRIPTION:${esc(event.description)}` : '',
-    event.location    ? `LOCATION:${esc(event.location)}`       : '',
-    'END:VEVENT',
-    'END:VCALENDAR',
-  ].filter(Boolean).join('\r\n')
-
-  const blob = new Blob([lines], { type: 'text/calendar;charset=utf-8' })
-  const url  = URL.createObjectURL(blob)
-  const a    = document.createElement('a')
-  a.href     = url
-  a.download = `${event.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.ics`
-  a.click()
-  URL.revokeObjectURL(url)
+/**
+ * Per-event ICS URL. Served by `/api/calendar/event/[id]` with
+ * `Content-Type: text/calendar` + `Content-Disposition: inline`, which triggers
+ * the native "Add to Calendar?" sheet on iOS Safari and opens Calendar.app on
+ * macOS — much better UX than a client-built blob download (the blob lands in
+ * Files on iPhone and is effectively invisible to non-technical users).
+ */
+function buildIcsHref(event: Event): string {
+  return `/api/calendar/event/${encodeURIComponent(event._id)}`
 }
 
 // ─── Event detail modal ───────────────────────────────────────────────────────
@@ -301,9 +274,11 @@ function EventDetail({ event, onClose }: { event: Event; onClose: () => void }) 
                 Outlook
               </a>
 
-              <button
-                onClick={() => downloadIcs(event)}
-                title="Downloads a calendar file — open it to add the event to Apple Calendar, Outlook, or any other calendar app"
+              <a
+                href={buildIcsHref(event)}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Opens the event in your device's calendar app (Apple Calendar, Outlook, etc.)"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors"
               >
                 {/* Apple Calendar icon */}
@@ -318,7 +293,7 @@ function EventDetail({ event, onClose }: { event: Event; onClose: () => void }) 
                   </text>
                 </svg>
                 Apple Calendar
-              </button>
+              </a>
             </div>
           </div>
         </div>
