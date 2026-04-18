@@ -13,6 +13,10 @@ const config: Config = {
         'eaa-yellow': '#FFD700',
         'eaa-light-blue': '#0066CC',
       },
+      fontFamily: {
+        // Display serif for hero overlays (loaded in app/layout.tsx).
+        display: ['var(--font-cormorant)', 'Cormorant', 'Georgia', 'Times New Roman', 'serif'],
+      },
     },
   },
   plugins: [],

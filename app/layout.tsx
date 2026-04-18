@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { PT_Serif } from 'next/font/google'
+import { PT_Serif, Cormorant_Garamond } from 'next/font/google'
 import './globals.css'
 import SiteChrome from '@/components/SiteChrome'
 import { getSiteSettings, getProgramNavItems } from '@/lib/sanity'
@@ -12,6 +12,18 @@ const ptSerif = PT_Serif({
   variable: '--font-pt-serif',
   display: 'swap',
   fallback: ['serif'],
+})
+
+// Display serif used for the /kudos hero overlay (closest free analogue to
+// Minerva Modern, which is paid Adobe Fonts only). Exposed as a CSS var so
+// the body's default PT Serif stack is unaffected.
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-cormorant',
+  display: 'swap',
+  fallback: ['Cormorant', 'Georgia', 'Times New Roman', 'serif'],
 })
 
 export const metadata: Metadata = {
@@ -37,7 +49,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={cormorant.variable} suppressHydrationWarning>
       <body className={ptSerif.className} suppressHydrationWarning>
         <SiteChrome announcement={announcement} showStore={showStore} programNavItems={programNavItems}>
           {children}

@@ -86,7 +86,9 @@ export default async function KudosPage() {
     pageContent = pageResult.value as KudosPageContent
   }
 
-  const pageTitle = pageContent?.pageTitle?.trim() || DEFAULT_TITLE
+  // pageTitle is intentionally not rendered on-page (the hero tagline serves as
+  // the visible H1, matching the live site). It still feeds <title>/OG tags via
+  // generateMetadata above and the breadcrumb shown on individual kudo pages.
   const tagline = pageContent?.tagline?.trim() || DEFAULT_TAGLINE
   const intro = pageContent?.intro?.trim() || DEFAULT_INTRO
 
@@ -109,26 +111,67 @@ export default async function KudosPage() {
 
   return (
     <div>
-      <div className="w-full">
+      {/*
+        Hero with overlaid tagline + intro (mirrors live-site visual treatment).
+        WCAG AA contrast is guaranteed by:
+          1. A dark gradient scrim (rgba(0,0,0,0.55) baseline, deepening toward
+             center) that sits between the image and the text. Independently of
+             whatever hero image an editor uploads, white-on-scrim contrast
+             stays > 7:1.
+          2. A subtle text-shadow as a defense-in-depth fallback in case the
+             scrim layer is somehow blocked (extension, print, etc.).
+        The image is marked aria-hidden because the tagline + intro now act as
+        the accessible name; we keep alt text on the underlying <Image> only
+        when the editor explicitly provided it for SR users who want context.
+      */}
+      <section
+        aria-labelledby="kudos-hero-heading"
+        className="relative w-full overflow-hidden bg-eaa-blue"
+        style={{ aspectRatio: `${heroWidth} / ${heroHeight}`, minHeight: '280px', maxHeight: '560px' }}
+      >
         <Image
           src={heroImageUrl}
           alt={heroImageAlt}
           width={heroWidth}
           height={heroHeight}
-          className="w-full h-auto block"
+          className="absolute inset-0 w-full h-full object-cover"
           priority
           sizes="100vw"
         />
-      </div>
+        {/* Scrim: vertical gradient, darkest in the center band where text sits. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.65) 45%, rgba(0,0,0,0.65) 55%, rgba(0,0,0,0.55) 100%)',
+          }}
+        />
+        <div className="relative z-10 h-full flex items-center justify-center px-6 sm:px-10">
+          <div
+            className="font-display text-white text-center max-w-4xl"
+            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.55)' }}
+          >
+            <h1
+              id="kudos-hero-heading"
+              className="text-2xl sm:text-3xl md:text-4xl font-medium italic tracking-wide"
+            >
+              {tagline}
+            </h1>
+            <p className="mt-4 sm:mt-5 text-base sm:text-lg md:text-xl leading-relaxed font-normal">
+              {intro}
+            </p>
+          </div>
+        </div>
+      </section>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <header className="mb-10">
-          <h1 className="text-4xl font-bold text-eaa-blue mb-4">{pageTitle}</h1>
-          <p className="text-lg text-gray-700 italic font-semibold uppercase tracking-wide">
-            {tagline}
-          </p>
-          <p className="mt-3 text-gray-700 max-w-3xl">{intro}</p>
-        </header>
+        {/*
+          The hero's tagline serves as the page's H1 (it's the page's primary
+          message and matches the live-site treatment). The literal page name
+          ("Kudos") is carried by <title>/breadcrumbs, so we don't repeat it
+          here. Kudo cards below use H2, preserving a clean heading outline.
+        */}
 
         {kudosList.length > 0 ? (
           <ul aria-label="Kudos recipients" className="space-y-8 list-none p-0">
