@@ -44,7 +44,7 @@ const FALLBACK_PROGRAMS: HomeProgramCard[] = [
     name: 'Youth Aviation Program',
     description:
       'Youth ages 14+ build real airplanes in our hangar — earning credits toward future flight training.',
-    href: '/programs/youth-aviation',
+    href: '/programs/youth-aviation-program',
     cta: 'Express Interest',
   },
   {

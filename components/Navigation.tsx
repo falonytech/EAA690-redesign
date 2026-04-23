@@ -91,7 +91,7 @@ const DEFAULT_PROGRAM_SUBMENU = [
   { name: 'Scholarships', href: '/programs/scholarships' },
   { name: 'Summer Camp', href: '/programs/summer-camp' },
   { name: 'VMC/IMC Club', href: '/programs/vmc-imc-club' },
-  { name: 'Youth Aviation Program', href: '/programs/youth-aviation' },
+  { name: 'Youth Aviation Program', href: '/programs/youth-aviation-program' },
   { name: 'Young Eagles', href: '/programs/young-eagles' },
 ] as const
 

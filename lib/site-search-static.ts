@@ -43,7 +43,7 @@ export const STATIC_SITE_SEARCH_INDEX: StaticSearchEntry[] = [
   { title: 'Programs overview', href: '/programs', snippet: 'Youth aviation, scholarships, summer camp, Young Eagles, Eagle Flights, and more.' },
   { title: 'Young Eagles', href: '/programs/young-eagles', snippet: 'Free first flights for youth ages 8–17.' },
   { title: 'Eagle Flights', href: '/programs/eagle-flights', snippet: 'Introductory flights for adults new to general aviation.' },
-  { title: 'Youth Aviation Program', href: '/programs/youth-aviation', snippet: 'Hands-on aircraft building and youth STEM aviation for ages 14+.' },
+  { title: 'Youth Aviation Program', href: '/programs/youth-aviation-program', snippet: 'Hands-on aircraft building and youth STEM aviation for ages 14+.' },
   { title: 'Scholarships', href: '/programs/scholarships', snippet: 'Ray Aviation and chapter scholarships for young pilots.' },
   { title: 'Summer Camp', href: '/programs/summer-camp', snippet: 'Week-long aviation STEM summer camp at Gwinnett County Airport.' },
   { title: 'VMC / IMC Club', href: '/programs/vmc-imc-club', snippet: 'Monthly scenario-based safety meetings for pilots.' },

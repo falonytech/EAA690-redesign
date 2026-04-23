@@ -8,7 +8,7 @@ export const PROGRAM_NAV_FALLBACK: ProgramNavItem[] = [
   { name: 'Scholarships', href: '/programs/scholarships' },
   { name: 'Summer Camp', href: '/programs/summer-camp' },
   { name: 'VMC/IMC Club', href: '/programs/vmc-imc-club' },
-  { name: 'Youth Aviation Program', href: '/programs/youth-aviation' },
+  { name: 'Youth Aviation Program', href: '/programs/youth-aviation-program' },
   { name: 'Young Eagles', href: '/programs/young-eagles' },
 ]
 
@@ -47,7 +47,7 @@ export const PROGRAM_INDEX_FALLBACK: ProgramIndexCard[] = [
   },
   {
     name: 'Youth Aviation Program',
-    href: '/programs/youth-aviation',
+    href: '/programs/youth-aviation-program',
     description: 'Comprehensive youth aviation education program',
   },
   {
